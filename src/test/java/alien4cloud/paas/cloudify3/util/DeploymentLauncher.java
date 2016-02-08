@@ -1,16 +1,6 @@
 package alien4cloud.paas.cloudify3.util;
 
-import java.util.Map;
-
-import javax.annotation.Resource;
-
-import org.springframework.stereotype.Component;
-
-import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.SettableFuture;
-
 import alien4cloud.common.AlienConstants;
-import alien4cloud.it.Context;
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.orchestrators.locations.Location;
 import alien4cloud.model.topology.Topology;
@@ -25,6 +15,11 @@ import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.paas.wf.WorkflowsBuilderService;
 import alien4cloud.paas.wf.WorkflowsBuilderService.TopologyContext;
 import alien4cloud.utils.ReflectionUtil;
+import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.SettableFuture;
+import java.util.Map;
+import javax.annotation.Resource;
+import org.springframework.stereotype.Component;
 
 @Component
 public class DeploymentLauncher {
@@ -57,10 +52,10 @@ public class DeploymentLauncher {
         }
         CloudConfiguration cloudConfiguration = cloudConfigurationHolder.getConfiguration();
         String cloudifyURL = System.getenv("CLOUDIFY_URL");
-        if (cloudifyURL == null) {
-            cloudifyURL = Context.getInstance().getCloudify3ManagerUrl();
-        }
         cloudConfiguration.setUrl(cloudifyURL);
+        cloudConfiguration.setUserName("admin");
+        cloudConfiguration.setPassword("admin");
+        cloudConfiguration.setDisableSSLVerification(true);
         cloudConfigurationHolder.setConfigurationAndNotifyListeners(cloudConfiguration);
         initialized = true;
     }

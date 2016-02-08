@@ -7,12 +7,13 @@ import lombok.Setter;
 import alien4cloud.exception.NotFoundException;
 import alien4cloud.ui.form.annotation.FormProperties;
 import alien4cloud.ui.form.annotation.FormPropertyConstraint;
+import alien4cloud.ui.form.annotation.FormPropertyDefinition;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
 @Setter
-@FormProperties({ "url", "locations" })
+@FormProperties({ "url", "locations", "userName", "password", "disableSSLVerification" })
 public class CloudConfiguration {
 
     @FormPropertyConstraint(pattern = "http\\:.+(?:\\d+)")
@@ -22,6 +23,14 @@ public class CloudConfiguration {
     @NotNull
     private LocationConfigurations locations;
 
+    private String userName;
+
+    @FormPropertyDefinition(type = "string", isPassword = true, isRequired = false)
+    private String password;
+
+    @NotNull
+    private Boolean disableSSLVerification;
+
     @JsonIgnore
     public LocationConfiguration getConfigurationLocation(String locationName) {
         switch (locationName) {
@@ -29,6 +38,8 @@ public class CloudConfiguration {
             return locations.getAmazon();
         case "openstack":
             return locations.getOpenstack();
+        case "byon":
+            return locations.getByon();
         }
         throw new NotFoundException("Location " + locationName + " not found");
     }
