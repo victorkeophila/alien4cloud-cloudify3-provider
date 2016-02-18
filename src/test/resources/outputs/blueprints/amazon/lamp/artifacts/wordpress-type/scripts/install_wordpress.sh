@@ -22,7 +22,7 @@ if ! type "unzip" > /dev/null; then
 
   sudo rm -f /var/lib/dpkg/lock
   sudo apt-get update || (sleep 15; sudo apt-get update || exit ${1})
-  sudo apt-get install unzip || exit ${1}
+  sudo apt-get -y install unzip || exit ${1}
 
   rm -rf "${LOCK}"
   echo "$NAME released apt lock"
@@ -30,7 +30,11 @@ fi
 
 nameZip=${WEBFILE_URL##*/}
 echo "Dowload last build of Wordpress from $WEBFILE_URL to /tmp/$nameZip"
-wget $WEBFILE_URL -O /tmp/$nameZip
+if hash wget 2>/dev/null; then
+  sudo wget $WEBFILE_URL -O /tmp/$nameZip
+else
+  sudo curl -Lo /tmp/$nameZip -O $WEBFILE_URL
+fi
 
 echo "Unzip wordpress from /tmp/$nameZip to /opt/wordpress"
 sudo unzip -o /tmp/$nameZip -d /opt/wordpress

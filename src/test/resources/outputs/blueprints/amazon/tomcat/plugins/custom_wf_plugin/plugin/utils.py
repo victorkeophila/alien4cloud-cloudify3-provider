@@ -261,6 +261,7 @@ def operation_task_for_instance(ctx, graph, node_id, instance, operation_fqname,
         fork = ForkjoinWrapper(graph)
         fork.add(instance.execute_operation('cloudify.interfaces.monitoring.start'))
         as_target_relationships = custom_context.relationship_targets.get(instance.id, set())
+        host_instance = None
         if relationship_count > 0 or len(as_target_relationships) > 0:
             for relationship in instance.relationships:
                 # add a condition in order to test if it's a 1-1 rel
@@ -269,6 +270,8 @@ def operation_task_for_instance(ctx, graph, node_id, instance, operation_fqname,
                     # if the target of the relation is not in modified instances, we should call the target.add_source
                     #if relationship.target_node_instance.id not in custom_context.modified_instance_ids:
                     fork.add(relationship.execute_target_operation('cloudify.interfaces.relationship_lifecycle.establish'))
+                    if 'cloudify.nodes.Volume' in instance.node.type_hierarchy:
+                        host_instance = __get_host(ctx, relationship.target_node_instance)
             for relationship in as_target_relationships:
                 # add a condition in order to test if it's a 1-1 rel
                 if should_call_relationship_op(ctx, relationship):
@@ -280,6 +283,9 @@ def operation_task_for_instance(ctx, graph, node_id, instance, operation_fqname,
             instance.send_event("Start monitoring on node '{0}' instance '{1}'".format(node_id, instance.id)),
             forkjoin_sequence(graph, fork, instance, "establish")
         )
+        if host_instance is not None and 'alien4cloud.mapping.device.execute' in host_instance.node.operations:
+            sequence.add(host_instance.send_event("Updating device attribute for instance {0} and volume {0}".format(host_instance.id, instance.id)))
+            sequence.add(host_instance.execute_operation("alien4cloud.mapping.device.execute", kwargs={'volume_instance_id': instance.id}))
     elif operation_fqname == 'cloudify.interfaces.lifecycle.configure':
         as_target_relationships = custom_context.relationship_targets.get(instance.id, set())
         if relationship_count > 0 or len(as_target_relationships) > 0:

@@ -6,7 +6,7 @@ template_author: admin
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN11
-  - alien-extended-storage-types:1.0-SNAPSHOT
+  - alien-extended-storage-types:1.1.0
   - openstack-types:1.1.0-SNAPSHOT
   - php-type:2.0.0-SNAPSHOT
   - apache-type:2.0.0-SNAPSHOT
