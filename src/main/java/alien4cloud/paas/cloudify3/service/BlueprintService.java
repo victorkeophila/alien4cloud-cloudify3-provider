@@ -230,6 +230,12 @@ public class BlueprintService {
         FileUtil.zip(generatedBlueprintDirectoryPath.resolve("plugins/custom_wf_plugin"),
                 generatedBlueprintDirectoryPath.resolve("plugins/custom_wf_plugin.zip"));
 
+        // device
+        FileUtil.copy(pluginRecipeResourcesPath.resolve("device-mapping-scripts"),
+            generatedBlueprintDirectoryPath.resolve("device-mapping-scripts"), StandardCopyOption.REPLACE_EXISTING);
+        VelocityUtil.generate(pluginRecipeResourcesPath.resolve("velocity/mapping.py.vm"),
+            generatedBlueprintDirectoryPath.resolve("device-mapping-scripts/mapping.py"), context);
+
         // monitor
         if (CollectionUtils.isNotEmpty(alienDeployment.getNodesToMonitor())) {
             FileUtil.copy(pluginRecipeResourcesPath.resolve("monitor"), generatedBlueprintDirectoryPath.resolve("monitor"),

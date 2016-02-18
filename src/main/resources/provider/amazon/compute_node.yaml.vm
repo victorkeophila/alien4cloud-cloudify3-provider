@@ -32,6 +32,13 @@
       private_key_path: ${compute.nodeTemplate.properties.get("private_key_path").value}
 #else
     interfaces:
+      alien4cloud.mapping.device:
+        execute:
+          implementation: device-mapping-scripts/mapping.py
+          inputs:
+            iaas: amazon
+            os_mapping: ['linux']
+            device_key: device
 #parse("provider/common/monitoring_interfaces.yaml.vm")
 #end
 #foreach($externalNetwork in $publicNetworks)

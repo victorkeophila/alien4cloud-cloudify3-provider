@@ -17,7 +17,7 @@ client = CloudifyClient(utils.get_manager_ip(), utils.get_manager_rest_service_p
 
 def convert_env_value_to_string(envDict):
     for key, value in envDict.items():
-        envDict[key] = str(value)
+        envDict[str(key)] = str(envDict.pop(key))
 
 
 def get_host(entity):
@@ -210,7 +210,7 @@ def parse_output(output):
     return {'last_output': last_output, 'outputs': outputs}
 
 
-def execute(script_path, process, outputNames):
+def execute(script_path, process, outputNames, command_prefix=None):
     os.chmod(script_path, 0755)
     on_posix = 'posix' in sys.builtin_module_names
 
@@ -228,6 +228,9 @@ def execute(script_path, process, outputNames):
         command = '{0} {1}'.format(wrapper_path, script_path)
     else:
         command = script_path
+
+    if command_prefix is not None:
+        command = "{0} {1}".format(command_prefix, command)
 
     ctx.logger.info('Executing: {0} in env {1}'.format(command, env))
 
