@@ -27,12 +27,16 @@ public final class PropertyValueUtil {
     /**
      * Map properties of a template from tosca to cloudify properties.
      *
-     * @param allTypesPropertiesMappings Properties mapping for all tosca element in the topology
-     * @param nodeType Tosca elementType of the template for which to map properties
-     * @param properties The properties to map
+     * @param allTypesPropertiesMappings
+     *            Properties mapping for all tosca element in the topology
+     * @param nodeType
+     *            Tosca elementType of the template for which to map properties
+     * @param properties
+     *            The properties to map
      * @return A map of mapped properties
      */
-    public static Map<String, AbstractPropertyValue> mapProperties(Map<String, Map<String, IPropertyMapping>> allTypesPropertiesMappings, String nodeType,
+    public static Map<String, AbstractPropertyValue> mapProperties(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings,
+            String nodeType,
             Map<String, AbstractPropertyValue> properties) {
 
         if (allTypesPropertiesMappings == null || allTypesPropertiesMappings.isEmpty()) {
@@ -41,33 +45,38 @@ public final class PropertyValueUtil {
         }
 
         // first of all get the mapping for the node type
-        Map<String, IPropertyMapping> typePropertiesMappings = allTypesPropertiesMappings.get(nodeType);
+        Map<String, List<IPropertyMapping>> typePropertiesMappings = allTypesPropertiesMappings.get(nodeType);
         return mapProperties(allTypesPropertiesMappings, typePropertiesMappings, properties);
     }
 
     /**
      * Map properties of a template from tosca to cloudify properties.
      *
-     * @param typePropertiesMappings Properties mapping for the tosca element related to the template
-     * @param properties The properties to map
+     * @param typePropertiesMappings
+     *            Properties mapping for the tosca element related to the template
+     * @param properties
+     *            The properties to map
      * @return A map of mapped properties
      */
-    public static Map<String, AbstractPropertyValue> mapProperties(Map<String, IPropertyMapping> typePropertiesMappings,
+    public static Map<String, AbstractPropertyValue> mapProperties(Map<String, List<IPropertyMapping>> typePropertiesMappings,
             Map<String, AbstractPropertyValue> properties) {
-        Map<String, Map<String, IPropertyMapping>> allTypesPropertiesMappings = Maps.newLinkedHashMap();
+        Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings = Maps.newLinkedHashMap();
         return mapProperties(allTypesPropertiesMappings, typePropertiesMappings, properties);
     }
 
     /**
      * Map properties of a template from tosca to cloudify properties.
      *
-     * @param allTypesPropertiesMappings Properties mapping for all tosca element in the topology
-     * @param typePropertiesMappings Properties mapping for the tosca element related to the template
-     * @param properties The properties to map
+     * @param allTypesPropertiesMappings
+     *            Properties mapping for all tosca element in the topology
+     * @param typePropertiesMappings
+     *            Properties mapping for the tosca element related to the template
+     * @param properties
+     *            The properties to map
      * @return A map of mapped properties
      */
-    private static Map<String, AbstractPropertyValue> mapProperties(Map<String, Map<String, IPropertyMapping>> allTypesPropertiesMappings,
-            Map<String, IPropertyMapping> typePropertiesMappings, Map<String, AbstractPropertyValue> properties) {
+    private static Map<String, AbstractPropertyValue> mapProperties(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings,
+            Map<String, List<IPropertyMapping>> typePropertiesMappings, Map<String, AbstractPropertyValue> properties) {
         if (typePropertiesMappings == null || typePropertiesMappings.isEmpty()) {
             // do not change prop map
             return properties;
@@ -84,23 +93,29 @@ public final class PropertyValueUtil {
         return mappedProperties;
     }
 
-    private static void mapProperty(Map<String, Map<String, IPropertyMapping>> allTypesPropertiesMappings,
-            Map<String, IPropertyMapping> typesPropertiesMappings, String propertyName, PropertyValue sourcePropertyValue,
+    private static void mapProperty(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings,
+            Map<String, List<IPropertyMapping>> typesPropertiesMappings, String propertyName, PropertyValue sourcePropertyValue,
             Map<String, AbstractPropertyValue> mappedProperties) {
 
-        IPropertyMapping mapping = typesPropertiesMappings.get(propertyName);
-        if (mapping == null) {
-            // if the property is not mapped, just keep it as is.
-            mergeAndAddMappedProperty(propertyName, sourcePropertyValue, mappedProperties);
-        } else if (mapping instanceof PropertyMapping) {
-            processPropertyMapping(allTypesPropertiesMappings, (PropertyMapping) mapping, propertyName, sourcePropertyValue, mappedProperties);
-        } else if (mapping instanceof ComplexPropertyMapping) {
-            processComplexPropertyMapping(allTypesPropertiesMappings, propertyName, sourcePropertyValue, mappedProperties, mapping);
+        List<IPropertyMapping> mappingL = typesPropertiesMappings.get(propertyName);
+        if (mappingL != null) {
+            for (IPropertyMapping mapping : mappingL) {
+                if (mapping == null) {
+                    // if the property is not mapped, just keep it as is.
+                    mergeAndAddMappedProperty(propertyName, sourcePropertyValue, mappedProperties);
+                } else if (mapping instanceof PropertyMapping) {
+                    processPropertyMapping(allTypesPropertiesMappings, (PropertyMapping) mapping, propertyName, sourcePropertyValue, mappedProperties);
+                } else if (mapping instanceof ComplexPropertyMapping) {
+                    processComplexPropertyMapping(allTypesPropertiesMappings, propertyName, sourcePropertyValue, mappedProperties, mapping);
+                }
+            }
         }
-
+        else {
+            mergeAndAddMappedProperty(propertyName, sourcePropertyValue, mappedProperties);
+        }
     }
 
-    private static void processComplexPropertyMapping(Map<String, Map<String, IPropertyMapping>> allTypesPropertiesMappings, String propertyName,
+    private static void processComplexPropertyMapping(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings, String propertyName,
             PropertyValue sourcePropertyValue, Map<String, AbstractPropertyValue> mappedProperties, IPropertyMapping mapping) {
         ComplexPropertyMapping complexPropertyMapping = (ComplexPropertyMapping) mapping;
         String complexPropertyType = complexPropertyMapping.getType();
@@ -109,7 +124,7 @@ public final class PropertyValueUtil {
             return;
         }
         // get the mapping for this type
-        Map<String, IPropertyMapping> typeMapping = allTypesPropertiesMappings.get(complexPropertyType);
+        Map<String, List<IPropertyMapping>> typeMapping = allTypesPropertiesMappings.get(complexPropertyType);
         if (typeMapping == null) {
             log.warn(String.format(
                     "The property '%s' is known as a complex property mapping but the mapping for the type '%s' can not be found, ignore the mapping !",
@@ -161,7 +176,7 @@ public final class PropertyValueUtil {
         }
     }
 
-    private static void processPropertyMapping(Map<String, Map<String, IPropertyMapping>> propertyMappings, PropertyMapping mapping, String propertyName,
+    private static void processPropertyMapping(Map<String, Map<String, List<IPropertyMapping>>> propertyMappings, PropertyMapping mapping, String propertyName,
             PropertyValue sourcePropertyValue, Map<String, AbstractPropertyValue> mappedProperties) {
 
         if (mapping == null || mapping.getSubMappings().size() == 0) {
@@ -219,8 +234,10 @@ public final class PropertyValueUtil {
     /**
      * Map properties from tosca to cloudify properties.
      *
-     * @param propMappings The property mappings
-     * @param properties The properties to map.
+     * @param propMappings
+     *            The property mappings
+     * @param properties
+     *            The properties to map.
      */
     @Deprecated
     public static Map<String, AbstractPropertyValue> _mapProperties(Map<String, PropertyMapping> propMappings, Map<String, AbstractPropertyValue> properties) {
@@ -291,7 +308,8 @@ public final class PropertyValueUtil {
     /**
      * Return a property value based on the type of an object.
      *
-     * @param object The object to wrap into a PropertyValue.
+     * @param object
+     *            The object to wrap into a PropertyValue.
      * @return A property value that wraps the given object.
      */
     private static PropertyValue propertyValueFromObject(Object object) {
@@ -310,8 +328,10 @@ public final class PropertyValueUtil {
      * Merge a source property value into a target property. If target is not null, the source is merged directly in the target object and the target object is
      * returned.
      *
-     * @param source The source property value.
-     * @param target The target property value.
+     * @param source
+     *            The source property value.
+     * @param target
+     *            The target property value.
      * @return The merged object.
      */
     public static PropertyValue merge(PropertyValue source, PropertyValue target) {
@@ -364,7 +384,8 @@ public final class PropertyValueUtil {
     /**
      * Simple utility that deep clones an object made of Map, List and String.
      *
-     * @param propertyValue The property value to clone.
+     * @param propertyValue
+     *            The property value to clone.
      */
     public static PropertyValue deepClone(PropertyValue propertyValue) {
         if (propertyValue instanceof ListPropertyValue) {
@@ -379,7 +400,8 @@ public final class PropertyValueUtil {
     /**
      * Deep clone an object that compose a property value (every element is a String, a Map or a List).
      *
-     * @param propertyValueObject The object to clone.
+     * @param propertyValueObject
+     *            The object to clone.
      * @return A clone of the property value object.
      */
     private static <T> T deepClone(T propertyValueObject) {
