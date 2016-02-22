@@ -64,6 +64,13 @@ node_templates:
       instance_type: t2.small
       name: Server
     interfaces:
+      alien4cloud.mapping.device:
+        execute:
+          implementation: device-mapping-scripts/mapping.py
+          inputs:
+            iaas: amazon
+            os_mapping: ['linux']
+            device_key: device
       cloudify.interfaces.monitoring_agent:
         install:
           implementation: diamond.diamond_agent.tasks.install

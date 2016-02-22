@@ -118,7 +118,6 @@ node_templates:
       cloudify.interfaces.lifecycle:
         stop: wrapper/FileSystem/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
         start: wrapper/FileSystem/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
-        configure: wrapper/FileSystem/tosca.interfaces.node.lifecycle.Standard/configure/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
     relationships:
       - target: Compute
         type: cloudify.relationships.contained_in

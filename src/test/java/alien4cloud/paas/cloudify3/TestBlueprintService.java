@@ -70,7 +70,7 @@ public class TestBlueprintService extends AbstractTest {
     /**
      * Set true to this boolean so the blueprint will be uploaded to the manager to verify
      */
-    private boolean verifyBlueprintUpload = true;
+    private boolean verifyBlueprintUpload = false;
 
     private static final Set<String> LOCATIONS = Sets.newHashSet();
 

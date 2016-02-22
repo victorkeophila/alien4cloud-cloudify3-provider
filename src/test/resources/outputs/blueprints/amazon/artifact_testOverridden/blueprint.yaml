@@ -69,6 +69,13 @@ node_templates:
       - target: _a4c_floating_ip_Server_on_NetPub
         type: cloudify.aws.relationships.instance_connected_to_elastic_ip
     interfaces:
+      alien4cloud.mapping.device:
+        execute:
+          implementation: device-mapping-scripts/mapping.py
+          inputs:
+            iaas: amazon
+            os_mapping: ['linux']
+            device_key: device
       cloudify.interfaces.monitoring_agent:
         install:
           implementation: diamond.diamond_agent.tasks.install

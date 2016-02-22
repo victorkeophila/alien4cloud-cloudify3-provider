@@ -110,9 +110,9 @@ public class CSARUtil {
     }
 
     public void uploadAll() throws Exception {
-        repositoryManager.cloneOrCheckout(ARTIFACTS_DIRECTORY, URL_FOR_SAMPLES, "orchestrator-refactoring", SAMPLES_TYPES_NAME);
-        repositoryManager.cloneOrCheckout(ARTIFACTS_DIRECTORY, URL_FOR_NORMATIVES, "1.0.0.wd06.alien", TOSCA_NORMATIVE_TYPES_NAME);
-        repositoryManager.cloneOrCheckout(ARTIFACTS_DIRECTORY, URL_FOR_STORAGE, "orchestrator-refactoring", ALIEN4CLOUD_STORAGE_TYPES);
+        repositoryManager.cloneOrCheckout(ARTIFACTS_DIRECTORY, URL_FOR_SAMPLES, "master", SAMPLES_TYPES_NAME);
+        repositoryManager.cloneOrCheckout(ARTIFACTS_DIRECTORY, URL_FOR_NORMATIVES, "master", TOSCA_NORMATIVE_TYPES_NAME);
+        repositoryManager.cloneOrCheckout(ARTIFACTS_DIRECTORY, URL_FOR_STORAGE, "master", ALIEN4CLOUD_STORAGE_TYPES);
         uploadNormativeTypes();
         uploadStorage();
         uploadTomcat();
