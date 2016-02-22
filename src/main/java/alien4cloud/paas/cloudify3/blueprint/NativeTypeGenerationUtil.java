@@ -55,8 +55,10 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     /**
      * Check if a property has been defined with a non null and not empty value.
      *
-     * @param properties The map of properties in which to look.
-     * @param property The name of the property.
+     * @param properties
+     *            The map of properties in which to look.
+     * @param property
+     *            The name of the property.
      * @return True if a value has been defined, false if not.
      */
     public boolean hasPropertyValue(Map<String, AbstractPropertyValue> properties, String property) {
@@ -81,7 +83,8 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     /**
      * Utility method used by velocity generator in order to find the cloudify type from a cloudify tosca type.
      *
-     * @param toscaNodeType The tosca node type.
+     * @param toscaNodeType
+     *            The tosca node type.
      * @return The matching cloudify's type.
      */
     public String mapToCloudifyType(IndexedNodeType toscaNodeType) {
@@ -119,17 +122,21 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     /**
      * Apply properties mapping and then format properties for cloudify blueprint.
      *
-     * @param indentLevel The indentation level for the properties.
-     * @param properties The properties values map.
-     * @param propMappings The mapping configuration to map values.
+     * @param indentLevel
+     *            The indentation level for the properties.
+     * @param properties
+     *            The properties values map.
+     * @param propMappings
+     *            The mapping configuration to map values.
      * @return The formatted properties string to insert in the blueprint.
      */
-    public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties, Map<String, IPropertyMapping> propMappings) {
+    public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties, Map<String, List<IPropertyMapping>> propMappings) {
         Map<String, AbstractPropertyValue> mappedProperties = PropertyValueUtil.mapProperties(propMappings, properties);
         return formatProperties(indentLevel, mappedProperties);
     }
 
-    public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties, Map<String, Map<String, IPropertyMapping>> propertyMappings,
+    public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties,
+            Map<String, Map<String, List<IPropertyMapping>>> propertyMappings,
             String nodeType) {
         Map<String, AbstractPropertyValue> mappedProperties = PropertyValueUtil.mapProperties(propertyMappings, nodeType, properties);
         return formatProperties(indentLevel, mappedProperties);
@@ -194,7 +201,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
         return buffer.toString();
     }
 
-    public Map<String, IPropertyMapping> loadPropertyMapping(IndexedNodeType type, String tagName) {
+    public Map<String, List<IPropertyMapping>> loadPropertyMapping(IndexedNodeType type, String tagName) {
         return PropertiesMappingUtil.loadPropertyMapping(tagName, type);
     }
 
@@ -211,7 +218,8 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     /**
      * Get the value of the _a4c_persistent_resources tag.
      *
-     * @param tags The list of tags in which to search.
+     * @param tags
+     *            The list of tags in which to search.
      * @return The value of the _a4c_persistent_resources tag or null if the tag is not present in the list.
      */
     public String getPersistentResourceId(List<Tag> tags) {
