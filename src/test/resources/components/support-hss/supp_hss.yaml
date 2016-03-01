@@ -5,9 +5,9 @@ template_author: FastConnect
 template_version: 1.0-SNAPSHOT
 
 imports: 
-  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
-  - alien-extended-storage-types:1.1.0-SNAPSHOT
-  - alien-base-types:1.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-SNAPSHOT
+  - alien-extended-storage-types:1.1.0
+  - alien-base-types:1.0.0
 
 description : Component test for hss scaling
 

@@ -73,5 +73,5 @@ public class CloudifyDeployment {
     /**
      * * {elementType -> {propertyNamePath -> IPropertyMapping}}
      */
-    private Map<String, Map<String, IPropertyMapping>> propertyMappings;
+    private Map<String, Map<String, List<IPropertyMapping>>> propertyMappings;
 }
