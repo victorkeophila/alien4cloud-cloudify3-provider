@@ -35,9 +35,6 @@ def map_device_name(iaas, os_mapping, device_name):
     new_device_name = do_mapping(current_os, iaas, device_name)
   return new_device_name
 
-
-client = CloudifyClient(utils.get_manager_ip(), utils.get_manager_rest_service_port())
-
 # Retrieve requiert parameters
 volume_instance_id = inputs['volume_instance_id']
 iaas = inputs['iaas'] # correspond to the folder where to find the mapping scripts
