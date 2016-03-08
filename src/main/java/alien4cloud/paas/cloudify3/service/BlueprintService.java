@@ -13,13 +13,13 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import com.google.common.collect.Maps;
 
 import alien4cloud.component.repository.ArtifactLocalRepository;
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
@@ -46,7 +46,8 @@ import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.utils.FileUtil;
-import lombok.extern.slf4j.Slf4j;
+
+import com.google.common.collect.Maps;
 
 /**
  * Handle blueprint generation from alien model
@@ -147,13 +148,13 @@ public class BlueprintService {
             IndexedNodeType nonNativeType = nonNative.getIndexedToscaElement();
             // Don't process a node more than once
             copyDeploymentArtifacts(generatedBlueprintDirectoryPath, nonNative.getId(), nonNative.getNodeTemplate(), nonNativeType);
-            copyImplementationArtifacts(generatedBlueprintDirectoryPath, nonNative.getId(), nonNativeType);
+            copyImplementationArtifacts(generatedBlueprintDirectoryPath, nonNative.getId(), nonNative.getInterfaces());
             List<PaaSRelationshipTemplate> relationships = nonNative.getRelationshipTemplates();
             for (PaaSRelationshipTemplate relationship : relationships) {
                 if (relationship.getSource().equals(nonNative.getId())) {
                     IndexedRelationshipType relationshipType = relationship.getIndexedToscaElement();
                     copyDeploymentArtifacts(generatedBlueprintDirectoryPath, nonNative.getId(), relationship.getRelationshipTemplate(), relationshipType);
-                    copyImplementationArtifacts(generatedBlueprintDirectoryPath, nonNative.getId(), relationshipType);
+                    copyImplementationArtifacts(generatedBlueprintDirectoryPath, nonNative.getId(), relationship.getInterfaces());
                 }
             }
         }
@@ -320,9 +321,8 @@ public class BlueprintService {
         }
     }
 
-    private void copyImplementationArtifacts(Path generatedBlueprintDirectoryPath, String pathToNode, IndexedArtifactToscaElement nonNativeType)
+    private void copyImplementationArtifacts(Path generatedBlueprintDirectoryPath, String pathToNode, Map<String, Interface> interfaces)
             throws IOException, CSARVersionNotFoundException {
-        Map<String, Interface> interfaces = nonNativeType.getInterfaces();
         if (interfaces == null || interfaces.isEmpty()) {
             return;
         }
