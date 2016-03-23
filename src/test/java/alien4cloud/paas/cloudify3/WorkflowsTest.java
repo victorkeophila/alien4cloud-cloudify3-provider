@@ -1,15 +1,5 @@
 package alien4cloud.paas.cloudify3;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.collections4.MapUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import alien4cloud.model.common.Tag;
 import alien4cloud.model.components.IndexedNodeType;
 import alien4cloud.model.components.PropertyDefinition;
@@ -22,9 +12,16 @@ import alien4cloud.paas.cloudify3.util.mapping.PropertiesMappingUtil;
 import alien4cloud.paas.wf.NodeActivityStep;
 import alien4cloud.paas.wf.Workflow;
 import alien4cloud.paas.wf.util.WorkflowUtils;
-
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.collections4.MapUtils;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class WorkflowsTest {
 
@@ -53,6 +50,7 @@ public class WorkflowsTest {
         Map<String, List<IPropertyMapping>> mappings = PropertiesMappingUtil.loadPropertyMapping(PropertiesMappingUtil.PROP_MAPPING_TAG_KEY, nodeType);
         mappings.get("size");
         Assert.assertEquals(4, mappings.size()); // did not understand what submappings were about so far. will try.
+        Assert.assertEquals(2, mappings.get("size").size());
     }
 
     /**
