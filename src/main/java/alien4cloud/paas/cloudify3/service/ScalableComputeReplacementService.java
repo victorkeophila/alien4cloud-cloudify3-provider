@@ -346,11 +346,9 @@ public class ScalableComputeReplacementService {
         NodeTemplate nodeTemplate = new NodeTemplate();
         nodeTemplate.setType("tosca.nodes.SoftwareComponent");
         nodeTemplate.setName(id);
-        nodeTemplate.setInterfaces(Maps.<String, Interface> newHashMap());
         RelationshipTemplate hostedOn = new RelationshipTemplate();
         hostedOn.setType(NormativeRelationshipConstants.HOSTED_ON);
         hostedOn.setTarget(hostName);
-        hostedOn.setInterfaces(Maps.<String, Interface> newHashMap());
         Map<String, RelationshipTemplate> relationships = Maps.newHashMap();
         relationships.put("_a4c_generated_host", hostedOn);
         redirectedRelationship.setTarget(id);
@@ -384,8 +382,8 @@ public class ScalableComputeReplacementService {
         for (Entry<String, NodeTemplate> nodeTemplateEntry : deploymentContext.getDeploymentTopology().getNodeTemplates().entrySet()) {
             PaaSNodeTemplate paaSNodeTemplate = deploymentContext.getPaaSTopology().getAllNodes().get(nodeTemplateEntry.getKey());
             for (PaaSRelationshipTemplate paaSRelationshipTemplate : paaSNodeTemplate.getRelationshipTemplates()) {
-                if (paaSRelationshipTemplate.getRelationshipTemplate().getTarget().equals(oldTargetNode.getId())) {
-                    Map<String, Interface> interfaces = paaSRelationshipTemplate.getTemplate().getInterfaces();
+                if (paaSRelationshipTemplate.getTemplate().getTarget().equals(oldTargetNode.getId())) {
+                    Map<String, Interface> interfaces = paaSRelationshipTemplate.getInterfaces();
                     for (Entry<String, Interface> interfaceEntry : interfaces.entrySet()) {
                         for (Entry<String, Operation> operationEntry : interfaceEntry.getValue().getOperations().entrySet()) {
                             if (operationEntry.getValue() != null && operationEntry.getValue().getInputParameters() != null) {

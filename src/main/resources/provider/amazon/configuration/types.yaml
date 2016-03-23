@@ -64,7 +64,6 @@ node_types:
       user:
         type: string
         required: true
-        default: Admin
         description: The user to connect to the created VM in case the user/password has been created in the image.
       password:
         type: string
