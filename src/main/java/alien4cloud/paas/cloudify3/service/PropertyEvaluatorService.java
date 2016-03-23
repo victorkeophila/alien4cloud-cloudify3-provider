@@ -57,12 +57,12 @@ public class PropertyEvaluatorService {
         Map<String, PaaSNodeTemplate> allNodes = deploymentContext.getPaaSTopology().getAllNodes();
         for (PaaSNodeTemplate node : allNodes.values()) {
             processAttributes(node.getNodeTemplate().getAttributes(), node, allNodes);
-            processInterfaces(node.getNodeTemplate().getInterfaces(), node, allNodes);
+            processInterfaces(node.getInterfaces(), node, allNodes);
             List<PaaSRelationshipTemplate> relationships = node.getRelationshipTemplates();
             if (relationships != null) {
                 for (PaaSRelationshipTemplate relationship : relationships) {
                     processAttributes(relationship.getRelationshipTemplate().getAttributes(), relationship, allNodes);
-                    processInterfaces(relationship.getRelationshipTemplate().getInterfaces(), relationship, allNodes);
+                    processInterfaces(relationship.getInterfaces(), relationship, allNodes);
                 }
             }
         }

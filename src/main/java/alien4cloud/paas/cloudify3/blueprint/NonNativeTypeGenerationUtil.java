@@ -83,11 +83,11 @@ public class NonNativeTypeGenerationUtil extends AbstractGenerationUtil {
     }
 
     public Map<String, Interface> getNodeInterfaces(PaaSNodeTemplate node) {
-        return TopologyUtils.filterAbstractInterfaces(node.getNodeTemplate().getInterfaces());
+        return TopologyUtils.filterAbstractInterfaces(node.getInterfaces());
     }
 
     public Map<String, Interface> getRelationshipInterfaces(PaaSRelationshipTemplate relationship) {
-        return TopologyUtils.filterAbstractInterfaces(relationship.getRelationshipTemplate().getInterfaces());
+        return TopologyUtils.filterAbstractInterfaces(relationship.getInterfaces());
     }
 
     public Map<String, IValue> getNodeAttributes(PaaSNodeTemplate nodeTemplate) {
