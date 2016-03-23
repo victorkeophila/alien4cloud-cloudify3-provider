@@ -15,3 +15,4 @@ topology_template:
       properties:
         image: 02ddfcbb-9534-44d7-974d-5cfd36dfbcab
         flavor: 2
+        user: ubuntu

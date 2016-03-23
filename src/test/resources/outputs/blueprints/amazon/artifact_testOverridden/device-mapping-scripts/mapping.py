@@ -12,8 +12,10 @@ from StringIO import StringIO
 from cloudify_rest_client import CloudifyClient
 from cloudify import utils
 
-client = CloudifyClient(utils.get_manager_ip(), utils.get_manager_rest_service_port())
-
+if os.environ['MANAGER_REST_PROTOCOL'] == "https":
+  client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port(), protocol='https', trust_all=True)
+else:
+  client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port())
 
 def convert_env_value_to_string(envDict):
     for key, value in envDict.items():
@@ -329,9 +331,6 @@ def map_device_name(iaas, os_mapping, device_name):
   if current_os in os_mapping:
     new_device_name = do_mapping(current_os, iaas, device_name)
   return new_device_name
-
-
-client = CloudifyClient(utils.get_manager_ip(), utils.get_manager_rest_service_port())
 
 # Retrieve requiert parameters
 volume_instance_id = inputs['volume_instance_id']

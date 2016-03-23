@@ -76,16 +76,19 @@ public class DeploymentService extends RuntimeService {
         }
         // Cloudify 3 will use recipe id to identify a blueprint and a deployment instead of deployment id
         log.info("Deploying {} for alien deployment {}", alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId());
-        eventService.registerDeploymentEvent(alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+        eventService.registerDeployment(alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId());
+        statusService.registerDeploymentStatus(alienDeployment.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
         // generate the blueprint and return in case of failure.
         Path blueprintPath;
         try {
             blueprintPath = blueprintService.generateBlueprint(alienDeployment);
         } catch (IOException | CSARVersionNotFoundException e) {
-            log.error("Unable to generate the blueprint for " + alienDeployment.getDeploymentPaaSId() + " with alien deployment id "
-                    + alienDeployment.getDeploymentId(), e);
-            eventService.registerDeploymentEvent(alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId(), DeploymentStatus.FAILURE);
+            log.error(
+                    "Unable to generate the blueprint for " + alienDeployment.getDeploymentPaaSId() + " with alien deployment id "
+                            + alienDeployment.getDeploymentId(), e);
+            eventService.registerDeployment(alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId());
+            statusService.registerDeploymentStatus(alienDeployment.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
             return Futures.immediateFailedFuture(e);
         }
 
@@ -105,8 +108,7 @@ public class DeploymentService extends RuntimeService {
         ListenableFuture<Deployment> installedExecution = waitForExecutionFinish(installingExecution);
 
         // Add a callback to handled failures and provide alien with the correct events.
-        addFailureCallback(installedExecution, "Deployment", alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId(),
-                DeploymentStatus.FAILURE);
+        addFailureCallback(installedExecution, "Deployment", alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId(), DeploymentStatus.FAILURE);
         return installedExecution;
     }
 
@@ -157,8 +159,8 @@ public class DeploymentService extends RuntimeService {
 
         // start undeployment process and update alien status.
         log.info("Undeploying recipe {} with alien's deployment id {}", deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
-        eventService.registerDeploymentEvent(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId(),
-                DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
+        eventService.registerDeployment(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
+        statusService.registerDeploymentStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
 
         // Remove blueprint from the file system (alien) - we keep it for debuging perspective as long as deployment is up.
         blueprintService.deleteBlueprint(deploymentContext.getDeploymentPaaSId());
@@ -240,7 +242,8 @@ public class DeploymentService extends RuntimeService {
             @Override
             public void onFailure(Throwable t) {
                 log.error(operationName + " of deployment " + deploymentPaaSId + " with alien's deployment id " + deploymentId + " has failed", t);
-                eventService.registerDeploymentEvent(deploymentPaaSId, deploymentId, status);
+                eventService.registerDeployment(deploymentPaaSId, deploymentId);
+                statusService.registerDeploymentStatus(deploymentPaaSId, status);
             }
         });
     }
