@@ -49,6 +49,8 @@ public class CloudifyOrchestratorFactory implements IOrchestratorPluginFactory<C
         CloudConfiguration cloudConfiguration = new CloudConfiguration();
         cloudConfiguration.setUrl("http://yourManagerIP");
         cloudConfiguration.setDisableSSLVerification(false);
+        cloudConfiguration.setDelayBetweenDeploymentStatusPolling(30);
+        cloudConfiguration.setDelayBetweenInProgressDeploymentStatusPolling(5);
         LocationConfigurations locationConfigurations = new LocationConfigurations();
 
         LocationConfiguration amazon = new LocationConfiguration();

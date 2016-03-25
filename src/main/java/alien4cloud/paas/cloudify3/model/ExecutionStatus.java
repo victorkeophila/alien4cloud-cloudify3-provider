@@ -38,4 +38,12 @@ public class ExecutionStatus {
     public static boolean isTerminatedWithFailure(String status) {
         return FAILED.equals(status);
     }
+
+    public static boolean isCancelled(String status) {
+        return CANCELLING.equals(status) || FORCE_CANCELLING.equals(status) || CANCELLED.equals(status);
+    }
+
+    public static boolean isInProgress(String status) {
+        return PENDING.equals(status) || STARTED.equals(status);
+    }
 }
