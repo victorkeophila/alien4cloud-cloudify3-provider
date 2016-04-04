@@ -17,6 +17,7 @@ import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import alien4cloud.paas.cloudify3.error.CloudifyResponseErrorHandler;
+import alien4cloud.paas.cloudify3.service.SchedulerServiceFactoryBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -57,5 +58,10 @@ public class PluginContextConfiguration {
         SimpleClientHttpRequestFactory simpleClientHttpRequestFactory = new SimpleClientHttpRequestFactory();
         simpleClientHttpRequestFactory.setTaskExecutor(simpleAsyncTaskExecutor);
         return new AsyncRestTemplate(simpleClientHttpRequestFactory, restTemplate());
+    }
+
+    @Bean(name = "cloudify-scheduler")
+    public SchedulerServiceFactoryBean schedulerServiceFactoryBean() {
+        return new SchedulerServiceFactoryBean();
     }
 }

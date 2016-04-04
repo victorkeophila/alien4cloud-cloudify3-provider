@@ -144,6 +144,7 @@ public class CloudifyOrchestrator implements IOrchestratorPlugin<CloudConfigurat
             return;
         } else {
             eventService.init(activeDeployments);
+            statusService.init(activeDeployments);
         }
     }
 

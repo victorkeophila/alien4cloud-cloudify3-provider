@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -26,11 +27,15 @@ public class CloudifyResponseErrorHandler extends DefaultResponseErrorHandler {
             super.handleError(response);
         } catch (HttpStatusCodeException exception) {
             String formattedError = exception.getResponseBodyAsString();
-            try {
-                formattedError = objectMapper.writeValueAsString(objectMapper.readTree(formattedError));
-                log.error("Rest error with body \n{}", formattedError);
-            } catch (Exception e) {
-                // Ignore if we cannot indent error
+            if (!HttpStatus.NOT_FOUND.equals(exception.getStatusCode())) {
+                // Sometimes we poll resources to see if it's always there
+                // We don't want to see an error stack
+                try {
+                    formattedError = objectMapper.writeValueAsString(objectMapper.readTree(formattedError));
+                    log.error("Rest error with body \n{}", formattedError);
+                } catch (Exception e) {
+                    // Ignore if we cannot indent error
+                }
             }
             throw exception;
         }

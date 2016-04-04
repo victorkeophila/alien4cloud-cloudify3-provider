@@ -20,6 +20,7 @@ import alien4cloud.paas.cloudify3.model.EventAlienWorkflow;
 import alien4cloud.paas.cloudify3.model.EventAlienWorkflowStarted;
 import alien4cloud.paas.cloudify3.model.EventType;
 import alien4cloud.paas.cloudify3.model.NodeInstance;
+import alien4cloud.paas.cloudify3.model.NodeInstanceStatus;
 import alien4cloud.paas.cloudify3.model.Workflow;
 import alien4cloud.paas.cloudify3.restclient.DeploymentEventClient;
 import alien4cloud.paas.cloudify3.restclient.NodeInstanceClient;
@@ -39,7 +40,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -54,8 +54,6 @@ public class EventService {
     private DeploymentEventClient eventClient;
     @Resource
     private NodeInstanceClient nodeInstanceClient;
-    @Resource
-    private StatusService statusService;
     /**
      * Hold last event ids
      */
@@ -131,54 +129,23 @@ public class EventService {
                 return alienEvents.toArray(new AbstractMonitorEvent[alienEvents.size()]);
             }
         };
-        ListenableFuture<AbstractMonitorEvent[]> alienEventsFuture = Futures.transform(eventsFuture, cloudify3ToAlienEventsAdapter);
-
-        // Add a callback to deliver deployment status events
-        Futures.addCallback(alienEventsFuture, new FutureCallback<AbstractMonitorEvent[]>() {
-            @Override
-            public void onSuccess(AbstractMonitorEvent[] result) {
-                for (final AbstractMonitorEvent event : result) {
-                    if (event instanceof PaaSDeploymentStatusMonitorEvent) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Send event {} to Alien", event);
-                        }
-                        final DeploymentStatus deploymentStatus = ((PaaSDeploymentStatusMonitorEvent) event).getDeploymentStatus();
-                        final String paaSDeploymentId = alienDeploymentIdToPaaSDeploymentIdMapping.get(event.getDeploymentId());
-                        if (paaSDeploymentId == null) {
-                            log.warn("Received status event for non existing deployment " + event.getDeploymentId());
-                            return;
-                        }
-                        statusService.registerDeploymentEvent(paaSDeploymentId, deploymentStatus);
-                        if (DeploymentStatus.DEPLOYED.equals(deploymentStatus)) {
-                            log.info("Deployment {} has finished successfully", paaSDeploymentId);
-                        } else if (DeploymentStatus.UNDEPLOYED.equals(deploymentStatus)) {
-                            log.info("Un-Deployment {} has finished successfully", paaSDeploymentId);
-                            paaSDeploymentIdToAlienDeploymentIdMapping.remove(paaSDeploymentId);
-                            alienDeploymentIdToPaaSDeploymentIdMapping.remove(event.getDeploymentId());
-                        } else {
-                            log.info("Deployment {} has finished with status {}", paaSDeploymentId,
-                                    ((PaaSDeploymentStatusMonitorEvent) event).getDeploymentStatus());
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                log.error("Error happened while trying to retrieve events", t);
-            }
-        });
-        return alienEventsFuture;
+        return Futures.transform(eventsFuture, cloudify3ToAlienEventsAdapter);
     }
 
-    public synchronized void registerDeploymentEvent(String deploymentPaaSId, String deploymentId, DeploymentStatus deploymentStatus) {
-        statusService.registerDeploymentEvent(deploymentPaaSId, deploymentStatus);
+    public synchronized void registerDeployment(String deploymentPaaSId, String deploymentId) {
         paaSDeploymentIdToAlienDeploymentIdMapping.put(deploymentPaaSId, deploymentId);
         alienDeploymentIdToPaaSDeploymentIdMapping.put(deploymentId, deploymentPaaSId);
-        PaaSDeploymentStatusMonitorEvent deploymentStatusMonitorEvent = new PaaSDeploymentStatusMonitorEvent();
-        deploymentStatusMonitorEvent.setDeploymentStatus(deploymentStatus);
-        deploymentStatusMonitorEvent.setDeploymentId(deploymentId);
-        internalProviderEventsQueue.add(deploymentStatusMonitorEvent);
+    }
+
+    public synchronized void registerDeploymentEvent(String deploymentPaaSId, DeploymentStatus deploymentStatus) {
+        if (paaSDeploymentIdToAlienDeploymentIdMapping.containsKey(deploymentPaaSId)) {
+            PaaSDeploymentStatusMonitorEvent deploymentStatusMonitorEvent = new PaaSDeploymentStatusMonitorEvent();
+            deploymentStatusMonitorEvent.setDeploymentStatus(deploymentStatus);
+            deploymentStatusMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMapping.get(deploymentPaaSId));
+            internalProviderEventsQueue.add(deploymentStatusMonitorEvent);
+        } else {
+            log.warn("Notify new status {} for the deployment {} which is not registered by event service", deploymentStatus, deploymentPaaSId);
+        }
     }
 
     /**
@@ -246,40 +213,17 @@ public class EventService {
     private AbstractMonitorEvent toAlienEvent(Event cloudifyEvent) {
         AbstractMonitorEvent alienEvent;
         switch (cloudifyEvent.getEventType()) {
-        case EventType.WORKFLOW_SUCCEEDED:
-            PaaSDeploymentStatusMonitorEvent succeededStatusEvent = new PaaSDeploymentStatusMonitorEvent();
-            if (Workflow.INSTALL.equals(cloudifyEvent.getContext().getWorkflowId())) {
-                succeededStatusEvent.setDeploymentStatus(DeploymentStatus.DEPLOYED);
-            } else if (Workflow.DELETE_DEPLOYMENT_ENVIRONMENT.equals(cloudifyEvent.getContext().getWorkflowId())) {
-                succeededStatusEvent.setDeploymentStatus(DeploymentStatus.UNDEPLOYED);
-            } else {
+        case EventType.TASK_SUCCEEDED:
+            String newInstanceState = CloudifyLifeCycle.getSucceededInstanceState(cloudifyEvent.getContext().getOperation());
+            if (newInstanceState == null) {
                 return null;
             }
-            alienEvent = succeededStatusEvent;
-            break;
-        case EventType.WORKFLOW_FAILED:
-            PaaSDeploymentStatusMonitorEvent failedStatusEvent = new PaaSDeploymentStatusMonitorEvent();
-            failedStatusEvent.setDeploymentStatus(DeploymentStatus.FAILURE);
-            alienEvent = failedStatusEvent;
-            break;
-        case EventType.TASK_SUCCEEDED:
-            if (Workflow.DELETE_DEPLOYMENT_ENVIRONMENT.equals(cloudifyEvent.getContext().getWorkflowId())
-                    && "riemann_controller.tasks.delete".equals(cloudifyEvent.getContext().getTaskName())) {
-                PaaSDeploymentStatusMonitorEvent undeployedEvent = new PaaSDeploymentStatusMonitorEvent();
-                undeployedEvent.setDeploymentStatus(DeploymentStatus.UNDEPLOYED);
-                alienEvent = undeployedEvent;
-            } else {
-                String newInstanceState = CloudifyLifeCycle.getSucceededInstanceState(cloudifyEvent.getContext().getOperation());
-                if (newInstanceState == null) {
-                    return null;
-                }
-                PaaSInstanceStateMonitorEvent instanceTaskStartedEvent = new PaaSInstanceStateMonitorEvent();
-                instanceTaskStartedEvent.setInstanceId(cloudifyEvent.getContext().getNodeId());
-                instanceTaskStartedEvent.setNodeTemplateId(cloudifyEvent.getContext().getNodeName());
-                instanceTaskStartedEvent.setInstanceState(newInstanceState);
-                instanceTaskStartedEvent.setInstanceStatus(statusService.getInstanceStatusFromState(newInstanceState));
-                alienEvent = instanceTaskStartedEvent;
-            }
+            PaaSInstanceStateMonitorEvent instanceTaskStartedEvent = new PaaSInstanceStateMonitorEvent();
+            instanceTaskStartedEvent.setInstanceId(cloudifyEvent.getContext().getNodeId());
+            instanceTaskStartedEvent.setNodeTemplateId(cloudifyEvent.getContext().getNodeName());
+            instanceTaskStartedEvent.setInstanceState(newInstanceState);
+            instanceTaskStartedEvent.setInstanceStatus(NodeInstanceStatus.getInstanceStatusFromState(newInstanceState));
+            alienEvent = instanceTaskStartedEvent;
             break;
         case EventType.A4C_PERSISTENT_EVENT:
             log.info("Received persistent event " + cloudifyEvent.getId());
@@ -356,5 +300,4 @@ public class EventService {
         alienEvent.setDeploymentId(alienDeploymentId);
         return alienEvent;
     }
-
 }

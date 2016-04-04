@@ -285,7 +285,6 @@ node_types:
       user:
         type: string
         required: true
-        default: ubuntu
         description: The user to log in to the created Compute VM.
       cloudify_agent:
         type: alien.datatypes.AgentConfig
@@ -322,7 +321,6 @@ node_types:
       user:
         type: string
         required: true
-        default: Admin
         description: The user to log in to the created Compute VM.
       password:
         type: string
