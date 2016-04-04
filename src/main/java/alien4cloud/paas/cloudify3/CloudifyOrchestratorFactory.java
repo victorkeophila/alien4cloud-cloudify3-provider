@@ -120,4 +120,10 @@ public class CloudifyOrchestratorFactory implements IOrchestratorPluginFactory<C
     public ArtifactSupport getArtifactSupport() {
         return new ArtifactSupport(new String[] { "tosca.artifacts.Implementation.Bash", "alien.artifacts.BatchScript" });
     }
+
+    @Override
+    public String getType() {
+        return "Cloudify 3";
+    }
+
 }
