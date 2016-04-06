@@ -6,7 +6,7 @@ template_author: admin
 
 imports:
   - tosca-normative-types:1.0.0-SNAPSHOT
-  - alien-extended-storage-types:1.1.0
+  - alien-extended-storage-types:1.2.0-SNAPSHOT
   - cloudify-amazon-types:1.1.0-SNAPSHOT
   - php-type:2.0.0-SNAPSHOT
   - apache-type:2.0.0-SNAPSHOT
@@ -35,6 +35,7 @@ topology_template:
       properties:
         image_id: ami-47a23a30
         instance_type: t2.small
+        user: ubuntu
 
     PHP:
       type: alien.nodes.PHP
@@ -74,6 +75,7 @@ topology_template:
       properties:
         image_id: ami-47a23a30
         instance_type: t2.small
+        user: ubuntu
       requirements:
         - network:
             node: NetPub

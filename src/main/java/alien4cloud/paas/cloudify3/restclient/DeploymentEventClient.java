@@ -48,16 +48,9 @@ public class DeploymentEventClient extends AbstractEventClient {
                 .mustNot(QueryBuilders.matchQuery("workflow_id", Workflow.CREATE_DEPLOYMENT_ENVIRONMENT))
                 .mustNot(QueryBuilders.matchQuery("workflow_id", Workflow.EXECUTE_OPERATION))
                 .mustNot(QueryBuilders.matchQuery("workflow_id", Workflow.UNINSTALL))
-                .must(QueryBuilders
-                        .boolQuery()
-                        .should(QueryBuilders.matchQuery("event_type", EventType.WORKFLOW_SUCCEEDED))
-                        .should(QueryBuilders.matchQuery("event_type", EventType.A4C_PERSISTENT_EVENT))
+                .must(QueryBuilders.boolQuery().should(QueryBuilders.matchQuery("event_type", EventType.A4C_PERSISTENT_EVENT))
                         .should(QueryBuilders.matchQuery("event_type", EventType.A4C_WORKFLOW_EVENT))
-                        .should(QueryBuilders.matchQuery("event_type", EventType.A4C_WORKFLOW_STARTED))
-                        .should(QueryBuilders.matchQuery("event_type", EventType.WORKFLOW_FAILED))
-                        .should(QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("event_type", EventType.TASK_SUCCEEDED))
-                                .must(QueryBuilders.matchQuery("context.workflow_id", Workflow.DELETE_DEPLOYMENT_ENVIRONMENT))
-                                .must(QueryBuilders.matchQuery("context.task_name", "riemann_controller.tasks.delete"))));
+                        .should(QueryBuilders.matchQuery("event_type", EventType.A4C_WORKFLOW_STARTED)));
 
         // Or instance or workflow query
         eventsQuery.must(QueryBuilders.boolQuery().should(instanceStateQuery).should(workflowQuery));

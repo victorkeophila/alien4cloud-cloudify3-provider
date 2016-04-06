@@ -42,8 +42,8 @@ public class CSARUtil {
     public static final String URL_FOR_NORMATIVES = "https://github.com/alien4cloud/tosca-normative-types.git";
     public static final String URL_FOR_STORAGE = "https://github.com/alien4cloud/alien4cloud-extended-types.git";
     public static final String ALIEN4CLOUD_STORAGE_TYPES = "alien4cloud-extended-types";
-    public static final String ALIEN_EXTENDED_STORAGE_TYPES_1_0_SNAPSHOT = "alien-extended-storage-types-1.0-SNAPSHOT";
-    public static final String ALIEN_EXTENDED_BASE_TYPES_1_0_SNAPSHOT = "alien-base-types-1.0-SNAPSHOT";
+    public static final String ALIEN_EXTENDED_STORAGE_TYPES = "alien-extended-storage-types";
+    public static final String ALIEN_EXTENDED_BASE_TYPES = "alien-base-types";
 
     @Resource
     private ArchiveUploadService archiveUploadService;
@@ -93,8 +93,8 @@ public class CSARUtil {
     }
 
     public void uploadStorage() throws Exception {
-        uploadCSAR(ARTIFACTS_DIRECTORY.resolve(ALIEN4CLOUD_STORAGE_TYPES).resolve(ALIEN_EXTENDED_STORAGE_TYPES_1_0_SNAPSHOT));
-        uploadCSAR(ARTIFACTS_DIRECTORY.resolve(ALIEN4CLOUD_STORAGE_TYPES).resolve(ALIEN_EXTENDED_BASE_TYPES_1_0_SNAPSHOT));
+        uploadCSAR(ARTIFACTS_DIRECTORY.resolve(ALIEN4CLOUD_STORAGE_TYPES).resolve(ALIEN_EXTENDED_STORAGE_TYPES));
+        uploadCSAR(ARTIFACTS_DIRECTORY.resolve(ALIEN4CLOUD_STORAGE_TYPES).resolve(ALIEN_EXTENDED_BASE_TYPES));
     }
 
     public void uploadTomcat() throws Exception {

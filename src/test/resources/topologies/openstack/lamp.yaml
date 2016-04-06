@@ -6,7 +6,7 @@ template_author: admin
 
 imports:
   - tosca-normative-types:1.0.0-SNAPSHOT
-  - alien-extended-storage-types:1.1.0
+  - alien-extended-storage-types:1.2.0-SNAPSHOT
   - openstack-types:1.1.0-SNAPSHOT
   - php-type:2.0.0-SNAPSHOT
   - apache-type:2.0.0-SNAPSHOT
@@ -44,6 +44,7 @@ topology_template:
       properties:
         image: 02ddfcbb-9534-44d7-974d-5cfd36dfbcab
         flavor: 2
+        user: ubuntu
       requirements:
         - network:
             node: InternalNetwork
@@ -88,6 +89,7 @@ topology_template:
       properties:
         image: 02ddfcbb-9534-44d7-974d-5cfd36dfbcab
         flavor: 2
+        user: ubuntu
       requirements:
         - network:
             node: NetPub

@@ -13,7 +13,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
 @Setter
-@FormProperties({ "url", "locations", "userName", "password", "disableSSLVerification" })
+@FormProperties({ "url", "locations", "userName", "password", "disableSSLVerification", "delayBetweenDeploymentStatusPolling",
+        "delayBetweenInProgressDeploymentStatusPolling" })
 public class CloudConfiguration {
 
     @FormPropertyConstraint(pattern = "http\\:.+(?:\\d+)")
@@ -25,11 +26,17 @@ public class CloudConfiguration {
 
     private String userName;
 
-    @FormPropertyDefinition(type = "string", isPassword = true, isRequired = false)
+    @FormPropertyDefinition(type = "string", isPassword = true)
     private String password;
 
     @NotNull
     private Boolean disableSSLVerification;
+
+    @NotNull
+    private Integer delayBetweenDeploymentStatusPolling;
+
+    @NotNull
+    private Integer delayBetweenInProgressDeploymentStatusPolling;
 
     @JsonIgnore
     public LocationConfiguration getConfigurationLocation(String locationName) {

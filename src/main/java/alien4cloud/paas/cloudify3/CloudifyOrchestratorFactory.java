@@ -51,6 +51,8 @@ public class CloudifyOrchestratorFactory implements IOrchestratorPluginFactory<C
         CloudConfiguration cloudConfiguration = new CloudConfiguration();
         cloudConfiguration.setUrl("http://yourManagerIP");
         cloudConfiguration.setDisableSSLVerification(false);
+        cloudConfiguration.setDelayBetweenDeploymentStatusPolling(30);
+        cloudConfiguration.setDelayBetweenInProgressDeploymentStatusPolling(5);
         LocationConfigurations locationConfigurations = new LocationConfigurations();
 
         LocationConfiguration amazon = new LocationConfiguration();
@@ -122,4 +124,10 @@ public class CloudifyOrchestratorFactory implements IOrchestratorPluginFactory<C
     public ArtifactSupport getArtifactSupport() {
         return new ArtifactSupport(new String[] { "tosca.artifacts.Implementation.Bash", "alien.artifacts.BatchScript" });
     }
+
+    @Override
+    public String getType() {
+        return "Cloudify 3";
+    }
+
 }
