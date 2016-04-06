@@ -30,6 +30,8 @@ public class CloudifyOrchestratorFactory implements IOrchestratorPluginFactory<C
 
     public static final String CFY_SCRIPT_VERSION = "1.3.1";
 
+    public static final String CFY_BYON_VERSION = "1.4";
+
     @Resource
     private ApplicationContext factoryContext;
 
@@ -69,7 +71,7 @@ public class CloudifyOrchestratorFactory implements IOrchestratorPluginFactory<C
 
         LocationConfiguration byon = new LocationConfiguration();
         byon.setImports(Lists.newArrayList("http://www.getcloudify.org/spec/cloudify/" + CFY_VERSION + "/types.yaml",
-                "http://www.getcloudify.org/spec/host-pool-plugin/" + CFY_SCRIPT_VERSION + "/plugin.yaml", "http://www.getcloudify.org/spec/diamond-plugin/"
+                "http://www.getcloudify.org/spec/host-pool-plugin/" + CFY_BYON_VERSION + "/plugin.yaml", "http://www.getcloudify.org/spec/diamond-plugin/"
                         + CFY_SCRIPT_VERSION + "/plugin.yaml"));
         byon.setDsl("cloudify_dsl_1_2");
         locationConfigurations.setByon(byon);
