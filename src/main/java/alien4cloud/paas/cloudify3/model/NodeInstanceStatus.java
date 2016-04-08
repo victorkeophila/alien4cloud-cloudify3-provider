@@ -1,5 +1,7 @@
 package alien4cloud.paas.cloudify3.model;
 
+import alien4cloud.paas.model.InstanceStatus;
+
 public class NodeInstanceStatus {
 
     public static final String UNINITIALIZED = "uninitialized";
@@ -23,4 +25,25 @@ public class NodeInstanceStatus {
     public static final String DELETING = "deleting";
 
     public static final String DELETED = "deleted";
+
+    public static InstanceStatus getInstanceStatusFromState(String state) {
+        switch (state) {
+            case NodeInstanceStatus.STARTED:
+                return InstanceStatus.SUCCESS;
+            case NodeInstanceStatus.UNINITIALIZED:
+            case NodeInstanceStatus.STOPPING:
+            case NodeInstanceStatus.STOPPED:
+            case NodeInstanceStatus.STARTING:
+            case NodeInstanceStatus.CONFIGURING:
+            case NodeInstanceStatus.CONFIGURED:
+            case NodeInstanceStatus.CREATING:
+            case NodeInstanceStatus.CREATED:
+            case NodeInstanceStatus.DELETING:
+                return InstanceStatus.PROCESSING;
+            case NodeInstanceStatus.DELETED:
+                return null;
+            default:
+                return InstanceStatus.FAILURE;
+        }
+    }
 }

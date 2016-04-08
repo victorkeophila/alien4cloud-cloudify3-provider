@@ -12,7 +12,7 @@ from StringIO import StringIO
 from cloudify_rest_client import CloudifyClient
 from cloudify import utils
 
-if os.environ['MANAGER_REST_PROTOCOL'] == "https":
+if 'MANAGER_REST_PROTOCOL' in os.environ and os.environ['MANAGER_REST_PROTOCOL'] == "https":
   client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port(), protocol='https', trust_all=True)
 else:
   client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port())

@@ -9,23 +9,44 @@ imports:
   - cloudify3-common-types:${project.version}
 
 node_types:
-
-#################################################
-#                   COMPUTES
-###################################################
-
-  alien.cloudify.byon.nodes.Compute:
+  alien.cloudify.byon.nodes.LinuxCompute:
     derived_from: tosca.nodes.Compute
     tags:
-      _a4c_c3_derived_from: cloudify.hostpool.nodes.Host
+      _a4c_c3_derived_from: cloudify.hostpool.nodes.LinuxHost
       _a4c_c3_prop_map: >
-        {"host_pool_service_endpoint": null}
+        {"host_pool_service_endpoint": null, "filters": "filters.tags"}
+    properties:
+      host_pool_service_endpoint:
+        type: string
+        description: URL to the host pool service that will allocate hosts
+      filters:
+        description: List of tags which all must match in the hosts tags list
+        type: list
+        required: false
+        entry_schema:
+          type: string
+    attributes:
+      ip_address: { get_attribute: [SELF, ip] }
+      public_ip_address: { get_attribute: [SELF, public_address] }
+
+  alien.cloudify.byon.nodes.WindowsCompute:
+    derived_from: tosca.nodes.Compute
+    tags:
+      _a4c_c3_derived_from: cloudify.hostpool.nodes.WindowsHost
+      _a4c_c3_prop_map: >
+        {"host_pool_service_endpoint": null, "filters": "filters.tags"}
     properties:
       host_pool_service_endpoint:
         type: string
         description: URL to the host pool service that will allocate hosts
 #        constraints:
 #          - pattern: "http://.+"
+      filters:
+        description: List of tags which all must match in the hosts tags list
+        type: list
+        required: false
+        entry_schema:
+          type: string
     attributes:
       ip_address: { get_attribute: [SELF, ip] }
       public_ip_address: { get_attribute: [SELF, public_address] }
