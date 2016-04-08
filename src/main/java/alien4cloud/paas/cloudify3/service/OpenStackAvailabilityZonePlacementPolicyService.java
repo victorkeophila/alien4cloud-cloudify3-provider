@@ -10,6 +10,7 @@ import javax.inject.Inject;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import alien4cloud.model.components.AbstractPropertyValue;
@@ -21,7 +22,7 @@ import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;
 import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.HaPolicy;
 import alien4cloud.model.topology.NodeGroup;
-import alien4cloud.orchestrators.locations.services.LocationResourceService;
+import alien4cloud.orchestrators.locations.services.ILocationResourceService;
 import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
 import alien4cloud.paas.cloudify3.error.AZAssignmentException;
 import alien4cloud.paas.model.PaaSInstancePersistentResourceMonitorEvent;
@@ -39,7 +40,8 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
     private static final String AZ_KEY = "availability_zone";
 
     @Inject
-    private LocationResourceService locationResourceService;
+    @Lazy(true)
+    private ILocationResourceService locationResourceService;
     @Inject
     private EventService eventService;
 
