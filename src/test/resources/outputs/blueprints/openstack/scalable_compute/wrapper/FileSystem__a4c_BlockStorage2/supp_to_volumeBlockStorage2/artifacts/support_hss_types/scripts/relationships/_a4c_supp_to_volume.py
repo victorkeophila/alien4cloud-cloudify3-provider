@@ -13,8 +13,10 @@ from StringIO import StringIO
 from cloudify_rest_client import CloudifyClient
 from cloudify import utils
 
-client = CloudifyClient(utils.get_manager_ip(), utils.get_manager_rest_service_port())
-
+if os.environ['MANAGER_REST_PROTOCOL'] == "https":
+  client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port(), protocol='https', trust_all=True)
+else:
+  client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port())
 
 def convert_env_value_to_string(envDict):
     for key, value in envDict.items():
@@ -328,8 +330,8 @@ env_map['TARGET_INSTANCES'] = get_instance_list(ctx.target.node.id)
 env_map['SOURCE_NODE'] = ctx.source.node.id
 env_map['SOURCE_INSTANCE'] = ctx.source.instance.id
 env_map['SOURCE_INSTANCES'] = get_instance_list(ctx.source.node.id)
-env_map['TARGET_BLOCKSTORAGE_DEVICE'] = get_nested_attribute(ctx.target, ['volumes', 'BlockStorage2', 'device_name'])
-other_instances_map = _all_instances_get_nested_attribute(ctx.target, ['volumes', 'BlockStorage2', 'device_name'])
+env_map['TARGET_BLOCKSTORAGE_DEVICE'] = get_attribute(ctx.target, 'device')
+other_instances_map = _all_instances_get_attribute(ctx.target, 'device')
 if other_instances_map is not None:
     for other_instances_key in other_instances_map:
         env_map[other_instances_key + 'TARGET_BLOCKSTORAGE_DEVICE'] = other_instances_map[other_instances_key]

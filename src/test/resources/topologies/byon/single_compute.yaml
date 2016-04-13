@@ -11,8 +11,10 @@ imports:
 topology_template:
   node_templates:
     compute:
-      type: alien.cloudify.byon.nodes.Compute
+      type: alien.cloudify.byon.nodes.LinuxCompute
       properties:
-        host_pool_service_endpoint: "http://host.pool.service"
-
-# eu-west-1
+        host_pool_service_endpoint: "http://new.host.pool.service"
+        filters:
+          tags:
+            - x86_64
+            - 2048m

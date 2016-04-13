@@ -2,7 +2,6 @@ package alien4cloud.paas.cloudify3.service;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
@@ -22,7 +21,6 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  * Base class to manage deployment's runtime.
@@ -38,7 +36,8 @@ public abstract class RuntimeService {
     @Resource
     protected DeploymentClient deploymentClient;
 
-    protected ListeningScheduledExecutorService scheduledExecutorService = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1));
+    @Resource
+    protected ListeningScheduledExecutorService scheduledExecutorService;
 
     private ListenableFuture<Execution> internalWaitForExecutionFinish(final ListenableFuture<Execution> futureExecution) {
         AsyncFunction<Execution, Execution> waitFunc = new AsyncFunction<Execution, Execution>() {

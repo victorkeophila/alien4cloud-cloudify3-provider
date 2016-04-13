@@ -6,7 +6,7 @@ template_author: admin
 
 imports:
   - tosca-normative-types:1.0.0-SNAPSHOT
-  - alien-base-types:1.0.0
+  - alien-base-types:1.1.0-SNAPSHOT
   - tomcat-war-types:2.0.0-SNAPSHOT
   - cloudify-amazon-types:1.1.0-SNAPSHOT
   - cloudify3-common-types:1.1.0-SNAPSHOT
@@ -54,6 +54,7 @@ topology_template:
       properties:
         image_id: ami-47a23a30
         instance_type: t2.small
+        user: ubuntu
       requirements:
         - network:
             node: NetPub

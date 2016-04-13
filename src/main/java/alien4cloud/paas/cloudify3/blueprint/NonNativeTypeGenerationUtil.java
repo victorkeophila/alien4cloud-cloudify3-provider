@@ -269,7 +269,7 @@ public class NonNativeTypeGenerationUtil extends AbstractGenerationUtil {
             return "get_property(ctx." + functionPropertyValue.getTemplateName().toLowerCase() + context + ", '"
                     + functionPropertyValue.getElementNameToFetch() + "')";
         } else if (ToscaFunctionConstants.GET_OPERATION_OUTPUT.equals(functionPropertyValue.getFunction())) {
-            return "get_attribute(ctx" + functionPropertyValue.getTemplateName().toLowerCase() + context + ", '_a4c_OO:"
+            return "get_attribute(ctx." + functionPropertyValue.getTemplateName().toLowerCase() + context + ", '_a4c_OO:"
                     + functionPropertyValue.getInterfaceName() + ':' + functionPropertyValue.getOperationName() + ":"
                     + functionPropertyValue.getElementNameToFetch() + "')";
         } else {

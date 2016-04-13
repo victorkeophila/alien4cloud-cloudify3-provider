@@ -17,7 +17,7 @@ import alien4cloud.paas.cloudify3.restclient.auth.AuthenticationInterceptor;
 
 public abstract class AbstractClient {
 
-    @Resource
+    @Resource(name = "cloudify-async-rest-template")
     @Setter
     private AsyncRestTemplate restTemplate;
 

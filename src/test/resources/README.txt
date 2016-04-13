@@ -1,10 +1,9 @@
-1. Bootstrap 3.3. GA :
+1. Bootstrap 3.3.1 :
 
   - Clone the git repository https://fastconnect.org/gitlab/cloudify/cloudify-cli-docker-image.git
+  - follow the steps to create the docker container
 
-  - File /opt/cfy/cloudify-manager-blueprints-commercial/components/restservice/config/cloudify-rest.conf
-    find the key "insecure_endpoints_disabled" and replace the whole line with the folowing one:
-    insecure_endpoints_disabled: {{ ctx.node.properties.insecure_endpoints_disabled }}
+  ==== Before bootstrapping ====
 
   - File /opt/cfy/env/lib/python2.7/site-packages/cloudify_rest_client/plugins.py:
 
