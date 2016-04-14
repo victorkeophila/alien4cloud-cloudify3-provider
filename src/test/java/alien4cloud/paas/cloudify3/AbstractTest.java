@@ -1,6 +1,7 @@
 package alien4cloud.paas.cloudify3;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -11,8 +12,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.google.common.collect.Lists;
-
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.paas.cloudify3.configuration.CloudConfigurationHolder;
 import alien4cloud.paas.cloudify3.location.AmazonLocationConfigurator;
@@ -22,6 +21,8 @@ import alien4cloud.paas.cloudify3.util.CSARUtil;
 import alien4cloud.tosca.ArchiveIndexer;
 import alien4cloud.tosca.parser.ParsingError;
 import alien4cloud.utils.FileUtil;
+
+import com.google.common.collect.Lists;
 
 public class AbstractTest {
 
@@ -78,7 +79,11 @@ public class AbstractTest {
         FileUtil.delete(CSARUtil.ARTIFACTS_DIRECTORY);
         Path tempPluginDataPath = Paths.get("target/alien/plugin");
         FileUtil.delete(tempPluginDataPath);
-        FileUtil.copy(Paths.get("src/main/resources"), tempPluginDataPath);
+        for (Path cloudify3Path : Files.newDirectoryStream(Paths.get("target/"))) {
+            if (Files.isDirectory(cloudify3Path) && cloudify3Path.toString().startsWith("target/alien4cloud-cloudify3-provider")) {
+                FileUtil.copy(cloudify3Path, tempPluginDataPath);
+            }
+        }
     }
 
     @Before

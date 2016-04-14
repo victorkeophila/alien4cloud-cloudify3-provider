@@ -1,12 +1,8 @@
 package alien4cloud.paas.cloudify3.service;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -19,15 +15,7 @@ import org.springframework.stereotype.Component;
 
 import alien4cloud.deployment.DeploymentContextService;
 import alien4cloud.model.common.Tag;
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.ComplexPropertyValue;
-import alien4cloud.model.components.FunctionPropertyValue;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.ListPropertyValue;
-import alien4cloud.model.components.Operation;
-import alien4cloud.model.components.ScalarPropertyValue;
+import alien4cloud.model.components.*;
 import alien4cloud.model.orchestrators.locations.Location;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
@@ -37,12 +25,7 @@ import alien4cloud.paas.cloudify3.model.EventAlienPersistent;
 import alien4cloud.paas.cloudify3.model.Node;
 import alien4cloud.paas.cloudify3.restclient.NodeClient;
 import alien4cloud.paas.function.FunctionEvaluator;
-import alien4cloud.paas.model.AbstractMonitorEvent;
-import alien4cloud.paas.model.PaaSInstancePersistentResourceMonitorEvent;
-import alien4cloud.paas.model.PaaSInstanceStateMonitorEvent;
-import alien4cloud.paas.model.PaaSNodeTemplate;
-import alien4cloud.paas.model.PaaSRelationshipTemplate;
-import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.paas.model.*;
 import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.rest.utils.JsonUtil;
 import alien4cloud.tosca.normative.NormativeBlockStorageConstants;
@@ -93,6 +76,8 @@ public class ScalableComputeReplacementService {
     private NodeClient nodeClient;
     @Inject
     private DeploymentContextService deploymentContextService;
+    @Inject
+    private PropertyEvaluatorService propertyEvaluatorService;
 
     public PaaSTopologyDeploymentContext transformTopology(PaaSTopologyDeploymentContext deploymentContext) {
         // any type that is modified is cached in this map in order to be reused later while regenerating the deployment ctx
@@ -120,8 +105,11 @@ public class ScalableComputeReplacementService {
             deploymentContext.getDeploymentTopology().getNodeTemplates().put(fictiveComponent.getName(), fictiveComponent);
         }
         // generate the new PaaSTopologyDeploymentContext from the modified topology
-        return deploymentContextService.buildTopologyDeploymentContext(deploymentContext.getDeployment(), deploymentContext.getLocations(),
-                deploymentContext.getDeploymentTopology(), cache);
+        PaaSTopologyDeploymentContext context = deploymentContextService.buildTopologyDeploymentContext(deploymentContext.getDeployment(),
+                deploymentContext.getLocations(), deploymentContext.getDeploymentTopology(), cache);
+        // Re-process get property after re-generation of the context
+        propertyEvaluatorService.processGetPropertyFunction(context);
+        return context;
     }
 
     /**
@@ -176,8 +164,8 @@ public class ScalableComputeReplacementService {
         // actually, substituting the compute just means change it's type
         // and replace the related indexedNodeType
         computeNodeTemplate.setType(SCALABLE_COMPUTE_TYPE);
-        compute.setIndexedToscaElement(topologyTreeBuilderService.getToscaType(SCALABLE_COMPUTE_TYPE, cache, deploymentContext.getDeploymentTopology()
-                .getDependencies(), IndexedNodeType.class));
+        compute.setIndexedToscaElement(topologyTreeBuilderService.getToscaType(SCALABLE_COMPUTE_TYPE, cache,
+                deploymentContext.getDeploymentTopology().getDependencies(), IndexedNodeType.class));
         if (computeNodeTemplate.getProperties() == null) {
             Map<String, AbstractPropertyValue> properties = Maps.newHashMap();
             computeNodeTemplate.setProperties(properties);
@@ -244,8 +232,8 @@ public class ScalableComputeReplacementService {
         // add "use_external_resource" property
         ScalarPropertyValue volumeIdScalar = (ScalarPropertyValue) embeddedVolumeProperty.getValue().get(NormativeBlockStorageConstants.VOLUME_ID);
         String volumeId = FunctionEvaluator.getScalarValue(volumeIdScalar);
-        addProperty(embeddedVolumeProperty.getValue(), USE_EXTERNAL_RESOURCE_PROPERTY, new ScalarPropertyValue(Boolean
-                .valueOf(StringUtils.isNotBlank(volumeId)).toString()));
+        addProperty(embeddedVolumeProperty.getValue(), USE_EXTERNAL_RESOURCE_PROPERTY,
+                new ScalarPropertyValue(Boolean.valueOf(StringUtils.isNotBlank(volumeId)).toString()));
 
         // transfer persistent resources tag if needed
         transferPersistentResourcesTag(computeNode, storageNode, SCALABLE_COMPUTE_VOLUMES_PROPERTY);
