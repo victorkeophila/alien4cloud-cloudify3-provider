@@ -1,3 +1,4 @@
+
 from cloudify import ctx
 from cloudify.exceptions import NonRecoverableError
 from cloudify.state import ctx_parameters as inputs
@@ -297,70 +298,28 @@ class OutputConsumer(object):
     def join(self):
         self.consumer.join()
 
-# Check the inputs
-mandatories = ['iaas', 'os_mapping', 'volume_instance_id', 'device_key']
-for param in mandatories:
-  if param not in inputs:
-    raise SystemExit("The parameter '{0}' is missing".format(param))
+
+env_map = {}
+env_map['NODE'] = ctx.node.id
+env_map['INSTANCE'] = ctx.instance.id
+env_map['INSTANCES'] = get_instance_list(ctx.node.id)
+env_map['HOST'] = get_host_node_name(ctx.instance)
+env_map['FS_MOUNT_PATH'] = r'/var/cbs1'
+new_script_process = {'env': env_map}
 
 
-# Method which actually call the script corresponding to the IaaS and the OS that do the mapping
-def do_mapping(current_os, iaas, device_name):
-  map_script_path = None
-  ctx.logger.info("inside current os: '{0}'".format(current_os))
-  command_prefix = None
-  if 'windows' == current_os:
-    ctx.logger.info('[MAPPING] windows')
-    map_script_path = ctx.download_resource("device-mapping-scripts/{0}/mapDevice.ps1".format(iaas))
-    command_prefix="C:\\Windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe -executionpolicy bypass -File"
-  else:
-    ctx.logger.info("[MAPPING] linux")
-    map_script_path = ctx.download_resource("device-mapping-scripts/{0}/mapDevice.sh".format(iaas))
-  env_map = {'DEVICE_NAME' : device_name}
-  new_script_process = {'env': env_map}
-  convert_env_value_to_string(new_script_process['env'])
-  outputs = execute(map_script_path, new_script_process, outputNames=None, command_prefix=command_prefix)
-  return outputs['last_output']
+ctx.logger.info('Operation is executed with inputs {0}'.format(inputs))
+if inputs.get('process', None) is not None and inputs['process'].get('env', None) is not None:
+    ctx.logger.info('Operation is executed with environment variable {0}'.format(inputs['process']['env']))
+    new_script_process['env'].update(inputs['process']['env'])
+
+operationOutputNames = None
+convert_env_value_to_string(new_script_process['env'])
+parsed_output = execute(ctx.download_resource('artifacts/alien-extended-storage-types/scripts/unmount.sh'), new_script_process, operationOutputNames)
+for k,v in parsed_output['outputs'].items():
+    ctx.logger.info('Output name: {0} value: {1}'.format(k, v))
+    ctx.instance.runtime_properties['_a4c_OO:tosca.interfaces.node.lifecycle.Standard:stop:{0}'.format(k)] = v
 
 
-# Method will do the device mapping if the OS needs a mapping for the device
-def map_device_name(iaas, os_mapping, device_name):
-  new_device_name = None
-  current_os = platform.system().lower()
-  ctx.logger.info("current os: '{0}'".format(current_os))
-  if current_os in os_mapping:
-    new_device_name = do_mapping(current_os, iaas, device_name)
-  return new_device_name
-
-# Retrieve requiert parameters
-volume_instance_id = inputs['volume_instance_id']
-iaas = inputs['iaas'] # correspond to the folder where to find the mapping scripts
-os_mapping = inputs['os_mapping'] # values: windows or/and linux. it means that the specified os will need a mapping
-device_key = inputs['device_key'] # the attribute name of the volume node which contains the device value
-
-# Retrieve the current device_name from the attributes of the volume node
-volume = client.node_instances.get(volume_instance_id)
-ctx.logger.debug("[MAPPING] volume: {0}".format(volume))
-
-saved_device_key = "cfy_{0}_saved".format(device_key)
-if saved_device_key in volume.runtime_properties:
-  device_name = volume.runtime_properties[saved_device_key]
-elif device_key in volume.runtime_properties:
-  device_name = volume.runtime_properties[device_key]
-else:
-  ctx.logger.warning("No '{0}' keyname in runtime properties, retrieve the value from the properties of the node '{1}'".format(device_key, volume.node_id))
-  volume_node = client.nodes.get(volume.deployment_id, volume.node_id)
-  device_name = volume_node.properties[device_key]
-
-# Do the mapping
-mapped_device = map_device_name(iaas, os_mapping, device_name)
-
-# Update the device_name attributes if needed
-if mapped_device is not None:
-  if saved_device_key not in volume.runtime_properties:
-    volume.runtime_properties[saved_device_key] = device_name
-  volume.runtime_properties[device_key] = mapped_device
-  client.node_instances.update(volume_instance_id, None, volume.runtime_properties, volume.version)
-  ctx.logger.info("[MAPPING] volume: {0} updated".format(volume))
-else:
-  ctx.logger.info("[MAPPING] No mapping for {0}".format(volume_instance_id))
+ctx.instance.runtime_properties['partition_name'] = get_attribute(ctx, '_a4c_OO:tosca.interfaces.relationship.Configure:pre_configure_source:PARTITION_NAME')
+ctx.instance.update()

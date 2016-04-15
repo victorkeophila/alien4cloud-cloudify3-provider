@@ -13,7 +13,7 @@ from StringIO import StringIO
 from cloudify_rest_client import CloudifyClient
 from cloudify import utils
 
-if os.environ['MANAGER_REST_PROTOCOL'] == "https":
+if 'MANAGER_REST_PROTOCOL' in os.environ and os.environ['MANAGER_REST_PROTOCOL'] == "https":
   client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port(), protocol='https', trust_all=True)
 else:
   client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port())
@@ -304,12 +304,7 @@ env_map['NODE'] = ctx.node.id
 env_map['INSTANCE'] = ctx.instance.id
 env_map['INSTANCES'] = get_instance_list(ctx.node.id)
 env_map['HOST'] = get_host_node_name(ctx.instance)
-env_map['FS_MOUNT_PATH'] = r'/usr/data'
-env_map['PARTITION_NAME'] = get_attribute(ctx, 'partition_name')
-other_instances_map = _all_instances_get_attribute(ctx, 'partition_name')
-if other_instances_map is not None:
-    for other_instances_key in other_instances_map:
-        env_map[other_instances_key + 'PARTITION_NAME'] = other_instances_map[other_instances_key]
+env_map['FS_MOUNT_PATH'] = r'/var/cbs4'
 new_script_process = {'env': env_map}
 
 
@@ -320,10 +315,10 @@ if inputs.get('process', None) is not None and inputs['process'].get('env', None
 
 operationOutputNames = None
 convert_env_value_to_string(new_script_process['env'])
-parsed_output = execute(ctx.download_resource('artifacts/alien-extended-storage-types/scripts/mount.sh'), new_script_process, operationOutputNames)
+parsed_output = execute(ctx.download_resource('artifacts/alien-extended-storage-types/scripts/unmount.sh'), new_script_process, operationOutputNames)
 for k,v in parsed_output['outputs'].items():
     ctx.logger.info('Output name: {0} value: {1}'.format(k, v))
-    ctx.instance.runtime_properties['_a4c_OO:tosca.interfaces.node.lifecycle.Standard:start:{0}'.format(k)] = v
+    ctx.instance.runtime_properties['_a4c_OO:tosca.interfaces.node.lifecycle.Standard:stop:{0}'.format(k)] = v
 
 
 ctx.instance.runtime_properties['partition_name'] = get_attribute(ctx, '_a4c_OO:tosca.interfaces.relationship.Configure:pre_configure_source:PARTITION_NAME')
