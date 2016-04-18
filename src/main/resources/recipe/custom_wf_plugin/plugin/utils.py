@@ -361,8 +361,8 @@ def operation_task_for_instance(ctx, graph, node_id, instance, operation_fqname,
                         _set_send_node_event_on_error_handler(unlink_task_source, instance, "Error occurred while unlinking node from target {0} - ignoring...".format(relationship.target_id))
                         fork.add(unlink_task_source)
 
-        if fork.is_not_empty():
-            sequence.add(forkjoin_sequence(graph, fork, instance, "unlink"))
+            if fork.is_not_empty():
+                sequence.add(forkjoin_sequence(graph, fork, instance, "unlink"))
 
     elif operation_fqname == 'cloudify.interfaces.lifecycle.delete':
         task = instance.execute_operation(operation_fqname)
