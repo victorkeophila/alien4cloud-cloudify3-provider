@@ -372,6 +372,7 @@ public class ScalableComputeReplacementService {
             for (PaaSRelationshipTemplate paaSRelationshipTemplate : paaSNodeTemplate.getRelationshipTemplates()) {
                 if (paaSRelationshipTemplate.getTemplate().getTarget().equals(oldTargetNode.getId())) {
                     Map<String, Interface> interfaces = paaSRelationshipTemplate.getInterfaces();
+                    boolean hasBeenTransformed = false;
                     for (Entry<String, Interface> interfaceEntry : interfaces.entrySet()) {
                         for (Entry<String, Operation> operationEntry : interfaceEntry.getValue().getOperations().entrySet()) {
                             if (operationEntry.getValue() != null && operationEntry.getValue().getInputParameters() != null) {
@@ -385,11 +386,20 @@ public class ScalableComputeReplacementService {
                                             String attributeName = functionPropertyValue.getElementNameToFetch();
                                             // we want to transform the function into a one fetching nested properties
                                             transformFunction(functionPropertyValue, mainPropertyListName, oldTargetNode.getId(), attributeName);
+                                            hasBeenTransformed = true;
                                         }
                                     }
                                 }
                             }
                         }
+                    }
+                    if (hasBeenTransformed) {
+                        Map<String, Interface> templateInterfaces = paaSRelationshipTemplate.getTemplate().getInterfaces();
+                        if (templateInterfaces == null) {
+                            templateInterfaces = new HashMap<>();
+                            paaSRelationshipTemplate.getTemplate().setInterfaces(templateInterfaces);
+                        }
+                        IndexedModelUtils.mergeInterfaces(interfaces, templateInterfaces);
                     }
                     NodeTemplate fictiveComponent = createFictiveComponentAndRedirectRelationship("_a4c_" + oldTargetNode.getId(), newTargetNode.getId(),
                             paaSRelationshipTemplate.getRelationshipTemplate());
