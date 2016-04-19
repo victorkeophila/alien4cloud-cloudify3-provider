@@ -183,7 +183,7 @@ public class StatusService {
                     if (((HttpClientErrorException) throwable).getStatusCode().equals(HttpStatus.NOT_FOUND)) {
                         // Only return undeployed for an application if we received a 404 which means it was deleted
                         log.info("Application is not found on cloudify, it must have been deleted");
-                        return Futures.immediateFuture(null);
+                        return Futures.immediateFuture(DeploymentStatus.UNDEPLOYED);
                     }
                 }
                 return Futures.immediateFuture(DeploymentStatus.UNKNOWN);
