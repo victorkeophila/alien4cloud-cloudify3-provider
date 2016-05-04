@@ -7,8 +7,8 @@ template_author: admin
 imports:
   - tosca-normative-types:1.0.0-SNAPSHOT
   - alien-extended-storage-types:1.2.0-SNAPSHOT
-  - openstack-types:1.2.0-SM4-SNAPSHOT
-  - cloudify3-common-types:1.2.0-SM4-SNAPSHOT
+  - openstack-types:$projectVersion
+  - cloudify3-common-types:$projectVersion
 
 topology_template:
   node_templates:

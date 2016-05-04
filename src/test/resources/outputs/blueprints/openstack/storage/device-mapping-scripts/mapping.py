@@ -212,7 +212,7 @@ def parse_output(output):
     return {'last_output': last_output, 'outputs': outputs}
 
 
-def execute(script_path, process, outputNames, command_prefix=None):
+def execute(script_path, process, outputNames, command_prefix=None, cwd=None):
     os.chmod(script_path, 0755)
     on_posix = 'posix' in sys.builtin_module_names
 
@@ -241,7 +241,7 @@ def execute(script_path, process, outputNames, command_prefix=None):
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE,
                                env=env,
-                               cwd=None,
+                               cwd=cwd,
                                bufsize=1,
                                close_fds=on_posix)
 

@@ -46,7 +46,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
             }
             return formattedTextBuffer.toString();
         } else {
-            return text;
+            return text == null ? "" : text;
         }
     }
 

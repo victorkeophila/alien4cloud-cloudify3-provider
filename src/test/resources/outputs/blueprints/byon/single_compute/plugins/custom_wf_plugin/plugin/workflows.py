@@ -333,7 +333,7 @@ def a4c_heal(
 #following code can be pasted in src/test/python/workflows/context.py for simulation
 #def _build_nodes(ctx):
     #types = []
-    #types.append('alien.cloudify.byon.nodes.Compute')
+    #types.append('alien.cloudify.byon.nodes.LinuxCompute')
     #types.append('tosca.nodes.Compute')
     #types.append('tosca.nodes.Root')
     #node_compute = _build_node(ctx, 'compute', types, 1)

@@ -1,17 +1,5 @@
 package alien4cloud.paas.cloudify3;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-
-import javax.annotation.Resource;
-
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.springframework.beans.factory.annotation.Value;
-
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.paas.cloudify3.configuration.CloudConfigurationHolder;
 import alien4cloud.paas.cloudify3.location.AmazonLocationConfigurator;
@@ -21,8 +9,19 @@ import alien4cloud.paas.cloudify3.util.CSARUtil;
 import alien4cloud.tosca.ArchiveIndexer;
 import alien4cloud.tosca.parser.ParsingError;
 import alien4cloud.utils.FileUtil;
-
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Properties;
+import javax.annotation.Resource;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
+import org.springframework.core.io.ClassPathResource;
 
 public class AbstractTest {
 
@@ -41,6 +40,8 @@ public class AbstractTest {
     public static final String TOMCAT_TOPOLOGY = "tomcat";
 
     public static final String ARTIFACT_TEST_TOPOLOGY = "artifact_test";
+
+    public static final String VERSION;
 
     @Value("${cloudify3.externalNetworkName}")
     private String externalNetworkName;
@@ -73,6 +74,13 @@ public class AbstractTest {
 
     @Resource
     protected CloudConfigurationHolder cloudConfigurationHolder;
+
+    static {
+        YamlPropertiesFactoryBean propertiesFactoryBean = new YamlPropertiesFactoryBean();
+        propertiesFactoryBean.setResources(new org.springframework.core.io.Resource[] { new ClassPathResource("version.yml") });
+        Properties properties = propertiesFactoryBean.getObject();
+        VERSION = properties.getProperty("version");
+    }
 
     @BeforeClass
     public static void cleanup() throws IOException {

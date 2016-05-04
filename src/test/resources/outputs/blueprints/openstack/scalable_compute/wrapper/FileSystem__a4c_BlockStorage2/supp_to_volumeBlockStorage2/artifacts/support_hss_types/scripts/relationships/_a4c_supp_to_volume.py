@@ -13,7 +13,7 @@ from StringIO import StringIO
 from cloudify_rest_client import CloudifyClient
 from cloudify import utils
 
-if os.environ['MANAGER_REST_PROTOCOL'] == "https":
+if 'MANAGER_REST_PROTOCOL' in os.environ and os.environ['MANAGER_REST_PROTOCOL'] == "https":
   client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port(), protocol='https', trust_all=True)
 else:
   client = CloudifyClient(host=utils.get_manager_ip(), port=utils.get_manager_rest_service_port())
@@ -213,7 +213,7 @@ def parse_output(output):
     return {'last_output': last_output, 'outputs': outputs}
 
 
-def execute(script_path, process, outputNames, command_prefix=None):
+def execute(script_path, process, outputNames, command_prefix=None, cwd=None):
     os.chmod(script_path, 0755)
     on_posix = 'posix' in sys.builtin_module_names
 
@@ -242,7 +242,7 @@ def execute(script_path, process, outputNames, command_prefix=None):
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE,
                                env=env,
-                               cwd=None,
+                               cwd=cwd,
                                bufsize=1,
                                close_fds=on_posix)
 
@@ -330,8 +330,8 @@ env_map['TARGET_INSTANCES'] = get_instance_list(ctx.target.node.id)
 env_map['SOURCE_NODE'] = ctx.source.node.id
 env_map['SOURCE_INSTANCE'] = ctx.source.instance.id
 env_map['SOURCE_INSTANCES'] = get_instance_list(ctx.source.node.id)
-env_map['TARGET_BLOCKSTORAGE_DEVICE'] = get_attribute(ctx.target, 'device')
-other_instances_map = _all_instances_get_attribute(ctx.target, 'device')
+env_map['TARGET_BLOCKSTORAGE_DEVICE'] = get_nested_attribute(ctx.target, ['volumes', 'BlockStorage2', 'device_name'])
+other_instances_map = _all_instances_get_nested_attribute(ctx.target, ['volumes', 'BlockStorage2', 'device_name'])
 if other_instances_map is not None:
     for other_instances_key in other_instances_map:
         env_map[other_instances_key + 'TARGET_BLOCKSTORAGE_DEVICE'] = other_instances_map[other_instances_key]

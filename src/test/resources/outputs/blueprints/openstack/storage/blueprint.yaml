@@ -105,72 +105,21 @@ node_templates:
                    devices: x?vd[a-z]+[0-9]*$
                NetworkCollector: {}
 
-  LinuxFileSystem-4:
+  LinuxFileSystem_1:
     type: alien.nodes.LinuxFileSystem
     instances:
       deploy: 1
     interfaces:
       cloudify.interfaces.lifecycle:
-        stop: wrapper/LinuxFileSystem-4/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
-        start: wrapper/LinuxFileSystem-4/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
-    relationships:
-      - target: Compute
-        type: cloudify.relationships.contained_in
-      - target: _a4c_CBS4
-        type: alien.relationships.LinuxPartition
-        source_interfaces:
-          cloudify.interfaces.relationship_lifecycle:
-            postconfigure: wrapper/LinuxFileSystem-4__a4c_CBS4/linuxPartitionCBS4/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
-            preconfigure: wrapper/LinuxFileSystem-4__a4c_CBS4/linuxPartitionCBS4/artifacts/alien-extended-storage-types/scripts/_a4c_fdisk.py
-  LinuxFileSystem-3:
-    type: alien.nodes.LinuxFileSystem
-    instances:
-      deploy: 1
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        stop: wrapper/LinuxFileSystem-3/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
-        start: wrapper/LinuxFileSystem-3/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
-    relationships:
-      - target: _a4c_CBS3
-        type: alien.relationships.LinuxPartition
-        source_interfaces:
-          cloudify.interfaces.relationship_lifecycle:
-            postconfigure: wrapper/LinuxFileSystem-3__a4c_CBS3/linuxPartitionCBS3/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
-            preconfigure: wrapper/LinuxFileSystem-3__a4c_CBS3/linuxPartitionCBS3/artifacts/alien-extended-storage-types/scripts/_a4c_fdisk.py
-      - target: Compute
-        type: cloudify.relationships.contained_in
-  LinuxFileSystem-2:
-    type: alien.nodes.LinuxFileSystem
-    instances:
-      deploy: 1
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        stop: wrapper/LinuxFileSystem-2/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
-        start: wrapper/LinuxFileSystem-2/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
-    relationships:
-      - target: _a4c_CBS2
-        type: alien.relationships.LinuxPartition
-        source_interfaces:
-          cloudify.interfaces.relationship_lifecycle:
-            postconfigure: wrapper/LinuxFileSystem-2__a4c_CBS2/linuxPartitionCBS2/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
-            preconfigure: wrapper/LinuxFileSystem-2__a4c_CBS2/linuxPartitionCBS2/artifacts/alien-extended-storage-types/scripts/_a4c_fdisk.py
-      - target: Compute
-        type: cloudify.relationships.contained_in
-  LinuxFileSystem-1:
-    type: alien.nodes.LinuxFileSystem
-    instances:
-      deploy: 1
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        stop: wrapper/LinuxFileSystem-1/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
-        start: wrapper/LinuxFileSystem-1/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
+        stop: wrapper/LinuxFileSystem_1/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
+        start: wrapper/LinuxFileSystem_1/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
     relationships:
       - target: _a4c_CBS1
         type: alien.relationships.LinuxPartition
         source_interfaces:
           cloudify.interfaces.relationship_lifecycle:
-            postconfigure: wrapper/LinuxFileSystem-1__a4c_CBS1/linuxPartitionCBS1/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
-            preconfigure: wrapper/LinuxFileSystem-1__a4c_CBS1/linuxPartitionCBS1/artifacts/alien-extended-storage-types/scripts/_a4c_fdisk.py
+            postconfigure: wrapper/LinuxFileSystem_1__a4c_CBS1/linuxPartitionCBS1/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
+            preconfigure: wrapper/LinuxFileSystem_1__a4c_CBS1/linuxPartitionCBS1/artifacts/alien-extended-storage-types/scripts/_a4c_fdisk.py
       - target: Compute
         type: cloudify.relationships.contained_in
   _a4c_CBS1:
@@ -178,6 +127,40 @@ node_templates:
     instances:
       deploy: 1
     relationships:
+      - target: Compute
+        type: cloudify.relationships.contained_in
+  LinuxFileSystem_3:
+    type: alien.nodes.LinuxFileSystem
+    instances:
+      deploy: 1
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        stop: wrapper/LinuxFileSystem_3/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
+        start: wrapper/LinuxFileSystem_3/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
+    relationships:
+      - target: _a4c_CBS3
+        type: alien.relationships.LinuxPartition
+        source_interfaces:
+          cloudify.interfaces.relationship_lifecycle:
+            postconfigure: wrapper/LinuxFileSystem_3__a4c_CBS3/linuxPartitionCBS3/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
+            preconfigure: wrapper/LinuxFileSystem_3__a4c_CBS3/linuxPartitionCBS3/artifacts/alien-extended-storage-types/scripts/_a4c_fdisk.py
+      - target: Compute
+        type: cloudify.relationships.contained_in
+  LinuxFileSystem_2:
+    type: alien.nodes.LinuxFileSystem
+    instances:
+      deploy: 1
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        stop: wrapper/LinuxFileSystem_2/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
+        start: wrapper/LinuxFileSystem_2/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
+    relationships:
+      - target: _a4c_CBS2
+        type: alien.relationships.LinuxPartition
+        source_interfaces:
+          cloudify.interfaces.relationship_lifecycle:
+            postconfigure: wrapper/LinuxFileSystem_2__a4c_CBS2/linuxPartitionCBS2/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
+            preconfigure: wrapper/LinuxFileSystem_2__a4c_CBS2/linuxPartitionCBS2/artifacts/alien-extended-storage-types/scripts/_a4c_fdisk.py
       - target: Compute
         type: cloudify.relationships.contained_in
   _a4c_CBS3:
@@ -194,6 +177,23 @@ node_templates:
     relationships:
       - target: Compute
         type: cloudify.relationships.contained_in
+  LinuxFileSystem_4:
+    type: alien.nodes.LinuxFileSystem
+    instances:
+      deploy: 1
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        stop: wrapper/LinuxFileSystem_4/tosca.interfaces.node.lifecycle.Standard/stop/artifacts/alien-extended-storage-types/scripts/_a4c_unmount.py
+        start: wrapper/LinuxFileSystem_4/tosca.interfaces.node.lifecycle.Standard/start/artifacts/alien-extended-storage-types/scripts/_a4c_mount.py
+    relationships:
+      - target: Compute
+        type: cloudify.relationships.contained_in
+      - target: _a4c_CBS4
+        type: alien.relationships.LinuxPartition
+        source_interfaces:
+          cloudify.interfaces.relationship_lifecycle:
+            postconfigure: wrapper/LinuxFileSystem_4__a4c_CBS4/linuxPartitionCBS4/artifacts/alien-extended-storage-types/scripts/_a4c_mkfs.py
+            preconfigure: wrapper/LinuxFileSystem_4__a4c_CBS4/linuxPartitionCBS4/artifacts/alien-extended-storage-types/scripts/_a4c_fdisk.py
   _a4c_CBS4:
     type: tosca.nodes.SoftwareComponent
     instances:
