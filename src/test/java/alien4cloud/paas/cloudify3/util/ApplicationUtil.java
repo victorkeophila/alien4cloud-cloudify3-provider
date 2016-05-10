@@ -1,27 +1,25 @@
 package alien4cloud.paas.cloudify3.util;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import javax.annotation.Resource;
-
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-
-import org.elasticsearch.index.query.QueryBuilders;
-import org.springframework.stereotype.Component;
-
 import alien4cloud.application.ApplicationService;
 import alien4cloud.dao.ElasticSearchDAO;
 import alien4cloud.model.application.Application;
 import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.cloudify3.AbstractTest;
 import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.utils.FileUtil;
+import alien4cloud.utils.MapUtil;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import javax.annotation.Resource;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
@@ -56,7 +54,10 @@ public class ApplicationUtil {
 
     private Topology parseYamlTopology(String topologyFileName, String locationName) throws IOException, ParsingException {
         Path zipPath = Files.createTempFile("csar", ".zip");
-        FileUtil.zip(Paths.get("src/test/resources/topologies/" + locationName + "/" + topologyFileName + ".yaml"), zipPath);
+        Path realTopologyPath = Files.createTempFile(topologyFileName, ".yaml");
+        VelocityUtil.generate(Paths.get("src/test/resources/topologies/" + locationName + "/" + topologyFileName + ".yaml"), realTopologyPath,
+                MapUtil.newHashMap(new String[] { "projectVersion" }, new String[] { AbstractTest.VERSION }));
+        FileUtil.zip(realTopologyPath, zipPath);
         ParsingResult<ArchiveRoot> parsingResult = parser.parse(zipPath);
         return parsingResult.getResult().getTopology();
     }

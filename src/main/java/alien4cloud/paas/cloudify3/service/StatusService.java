@@ -22,36 +22,20 @@ import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.cloudify3.configuration.CloudConfigurationHolder;
 import alien4cloud.paas.cloudify3.configuration.MappingConfigurationHolder;
-import alien4cloud.paas.cloudify3.model.AbstractCloudifyModel;
-import alien4cloud.paas.cloudify3.model.Deployment;
-import alien4cloud.paas.cloudify3.model.Execution;
-import alien4cloud.paas.cloudify3.model.ExecutionStatus;
-import alien4cloud.paas.cloudify3.model.Node;
-import alien4cloud.paas.cloudify3.model.NodeInstance;
-import alien4cloud.paas.cloudify3.model.NodeInstanceStatus;
-import alien4cloud.paas.cloudify3.model.Workflow;
+import alien4cloud.paas.cloudify3.model.*;
 import alien4cloud.paas.cloudify3.restclient.DeploymentClient;
 import alien4cloud.paas.cloudify3.restclient.ExecutionClient;
 import alien4cloud.paas.cloudify3.restclient.NodeClient;
 import alien4cloud.paas.cloudify3.restclient.NodeInstanceClient;
 import alien4cloud.paas.cloudify3.util.DateUtil;
-import alien4cloud.paas.model.DeploymentStatus;
-import alien4cloud.paas.model.InstanceInformation;
-import alien4cloud.paas.model.InstanceStatus;
-import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
-import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.paas.model.*;
 import alien4cloud.utils.MapUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.FutureFallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import com.google.common.util.concurrent.*;
 
 /**
  * Handle all deployment status request
@@ -177,44 +161,31 @@ public class StatusService {
 
     private ListenableFuture<DeploymentStatus> asyncGetStatus(String deploymentPaaSId) {
         ListenableFuture<Deployment> deploymentFuture = deploymentDAO.asyncRead(deploymentPaaSId);
-        ListenableFuture<Deployment> deploymentWithNotFoundHandledFuture = Futures.withFallback(deploymentFuture, new FutureFallback<Deployment>() {
-            @Override
-            public ListenableFuture<Deployment> create(Throwable t) throws Exception {
-                if (t instanceof HttpClientErrorException) {
-                    if (((HttpClientErrorException) t).getStatusCode().equals(HttpStatus.NOT_FOUND)) {
-                        // Only return undeployed for an application if we received a 404 which means it was deleted
-                        log.info("Application is not found on cloudify, it must have been deleted");
-                        return Futures.immediateFuture(null);
-                    }
-                }
-                return Futures.immediateFailedFuture(t);
-            }
-        });
         AsyncFunction<Deployment, Execution[]> executionsAdapter = new AsyncFunction<Deployment, Execution[]>() {
             @Override
-            public ListenableFuture<Execution[]> apply(Deployment input) throws Exception {
-                if (input == null) {
-                    return Futures.immediateFuture(null);
-                } else {
-                    return executionDAO.asyncList(input.getId(), false);
-                }
+            public ListenableFuture<Execution[]> apply(Deployment deployment) throws Exception {
+                return executionDAO.asyncList(deployment.getId(), false);
             }
         };
-        ListenableFuture<Execution[]> executionsFuture = Futures.transform(deploymentWithNotFoundHandledFuture, executionsAdapter);
+        ListenableFuture<Execution[]> executionsFuture = Futures.transform(deploymentFuture, executionsAdapter);
         Function<Execution[], DeploymentStatus> deploymentStatusAdapter = new Function<Execution[], DeploymentStatus>() {
             @Override
-            public DeploymentStatus apply(Execution[] input) {
-                if (input == null) {
-                    return DeploymentStatus.UNDEPLOYED;
-                } else {
-                    return doGetStatus(input);
-                }
+            public DeploymentStatus apply(Execution[] executions) {
+                return doGetStatus(executions);
             }
         };
-        return Futures.withFallback(Futures.transform(executionsFuture, deploymentStatusAdapter), new FutureFallback<DeploymentStatus>() {
+        ListenableFuture<DeploymentStatus> statusFuture = Futures.transform(executionsFuture, deploymentStatusAdapter);
+        return Futures.withFallback(statusFuture, new FutureFallback<DeploymentStatus>() {
             @Override
-            public ListenableFuture<DeploymentStatus> create(Throwable t) throws Exception {
+            public ListenableFuture<DeploymentStatus> create(Throwable throwable) throws Exception {
                 // In case of error we give back unknown status and let the next polling determine the application status
+                if (throwable instanceof HttpClientErrorException) {
+                    if (((HttpClientErrorException) throwable).getStatusCode().equals(HttpStatus.NOT_FOUND)) {
+                        // Only return undeployed for an application if we received a 404 which means it was deleted
+                        log.info("Application is not found on cloudify, it must have been deleted");
+                        return Futures.immediateFuture(DeploymentStatus.UNDEPLOYED);
+                    }
+                }
                 return Futures.immediateFuture(DeploymentStatus.UNKNOWN);
             }
         });

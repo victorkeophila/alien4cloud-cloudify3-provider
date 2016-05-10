@@ -1,10 +1,5 @@
 package alien4cloud.paas.cloudify3.blueprint;
 
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
 import alien4cloud.model.common.Tag;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.FunctionPropertyValue;
@@ -21,8 +16,11 @@ import alien4cloud.paas.cloudify3.util.mapping.PropertiesMappingUtil;
 import alien4cloud.paas.cloudify3.util.mapping.PropertyValueUtil;
 import alien4cloud.paas.exception.NotSupportedException;
 import alien4cloud.utils.TagUtil;
-
 import com.google.common.collect.Maps;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
 
@@ -34,7 +32,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     }
 
     public String formatTextValue(int indentLevel, String text) {
-        if (text.contains("\n")) {
+        if (text != null && text.contains("\n")) {
             StringBuilder indentationBuffer = new StringBuilder();
             for (int i = 0; i < indentLevel; i++) {
                 indentationBuffer.append("  ");
@@ -48,7 +46,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
             }
             return formattedTextBuffer.toString();
         } else {
-            return text;
+            return text == null ? "" : text;
         }
     }
 
@@ -136,8 +134,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     }
 
     public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties,
-            Map<String, Map<String, List<IPropertyMapping>>> propertyMappings,
-            String nodeType) {
+            Map<String, Map<String, List<IPropertyMapping>>> propertyMappings, String nodeType) {
         Map<String, AbstractPropertyValue> mappedProperties = PropertyValueUtil.mapProperties(propertyMappings, nodeType, properties);
         return formatProperties(indentLevel, mappedProperties);
     }

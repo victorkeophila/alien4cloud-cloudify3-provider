@@ -55,7 +55,7 @@
         </property>
     </bean>
 
-    <bean id="asyncRestTemplate" class="org.springframework.web.client.AsyncRestTemplate">
+    <bean id="asyncRestTemplate" name="cloudify-async-rest-template" class="org.springframework.web.client.AsyncRestTemplate">
         <constructor-arg>
             <bean class="org.springframework.http.client.SimpleClientHttpRequestFactory">
                 <property name="taskExecutor">

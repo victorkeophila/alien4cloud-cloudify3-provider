@@ -7,12 +7,12 @@ template_author: admin
 imports:
   - tosca-normative-types:1.0.0-SNAPSHOT
   - alien-extended-storage-types:1.2.0-SNAPSHOT
-  - cloudify-amazon-types:1.1.0-SNAPSHOT
+  - cloudify-amazon-types:$projectVersion
   - php-type:2.0.0-SNAPSHOT
   - apache-type:2.0.0-SNAPSHOT
   - mysql-type:2.0.0-SNAPSHOT
   - wordpress-type:2.0.0-SNAPSHOT
-  - cloudify3-common-types:1.1.0-SNAPSHOT
+  - cloudify3-common-types:$projectVersion
 
 topology_template:
 

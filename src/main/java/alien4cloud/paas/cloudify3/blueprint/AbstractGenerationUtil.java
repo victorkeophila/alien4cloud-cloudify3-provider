@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import alien4cloud.model.components.IndexedNodeType;
 import alien4cloud.paas.cloudify3.configuration.MappingConfiguration;
 import alien4cloud.paas.cloudify3.service.PropertyEvaluatorService;
@@ -16,6 +17,7 @@ public abstract class AbstractGenerationUtil {
 
     protected MappingConfiguration mappingConfiguration;
 
+    @Getter
     protected CloudifyDeployment alienDeployment;
 
     protected Path recipePath;
@@ -47,4 +49,5 @@ public abstract class AbstractGenerationUtil {
         String mappedType = mappingConfiguration.getNormativeTypes().get(toscaType);
         return mappedType != null ? mappedType : toscaType;
     }
+
 }

@@ -8,6 +8,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,6 +35,7 @@ import alien4cloud.paas.cloudify3.service.model.CloudifyDeployment;
 import alien4cloud.paas.cloudify3.service.model.OperationWrapper;
 import alien4cloud.paas.cloudify3.service.model.Relationship;
 import alien4cloud.paas.exception.NotSupportedException;
+import alien4cloud.paas.function.FunctionEvaluator;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
@@ -106,6 +108,30 @@ public class NonNativeTypeGenerationUtil extends AbstractGenerationUtil {
             }
         }
         return attributesThatCanBeSet;
+    }
+
+    // TODO: manage concat ?
+    public Map<String, String> getNodeProperties(PaaSNodeTemplate node) {
+        Map<String, String> propertyValues = Maps.newHashMap();
+        Map<String, AbstractPropertyValue> nodeProperties = node.getTemplate().getProperties();
+        if (MapUtils.isNotEmpty(nodeProperties)) {
+            for (Entry<String, AbstractPropertyValue> propertyEntry : nodeProperties.entrySet()) {
+                String propertyName = propertyEntry.getKey();
+                String propertyValue = null;
+                if (propertyEntry.getValue() instanceof FunctionPropertyValue) {
+                    FunctionPropertyValue function = (FunctionPropertyValue) propertyEntry.getValue();
+                    if (ToscaFunctionConstants.GET_PROPERTY.equals(function.getFunction())) {
+                        propertyValue = FunctionEvaluator.evaluateGetPropertyFunction(function, node, alienDeployment.getAllNodes());
+                    }
+                } else if (propertyEntry.getValue() instanceof ScalarPropertyValue) {
+                    propertyValue = ((ScalarPropertyValue) propertyEntry.getValue()).getValue();
+                }
+                if (propertyValue != null) {
+                    propertyValues.put(propertyName, propertyValue);
+                }
+            }
+        }
+        return propertyValues;
     }
 
     public PaaSNodeTemplate getSourceNode(PaaSRelationshipTemplate relationshipTemplate) {

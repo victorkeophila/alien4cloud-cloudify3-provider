@@ -1,5 +1,14 @@
 package alien4cloud.paas.cloudify3.service;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.annotation.Resource;
+
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
+
 import alien4cloud.model.components.FunctionPropertyValue;
 import alien4cloud.model.components.IValue;
 import alien4cloud.model.components.Interface;
@@ -19,17 +28,12 @@ import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.tosca.normative.ToscaFunctionConstants;
 import alien4cloud.utils.MapUtil;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.util.Map;
-import java.util.Map.Entry;
-import javax.annotation.Resource;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
 /**
  * Handle custom workflow (non lifecycle workflow) which permit to modify the deployment at runtime
@@ -70,7 +74,12 @@ public class CustomWorkflowService extends RuntimeService {
         if (StringUtils.isNotBlank(nodeOperationExecRequest.getNodeTemplateName())) {
             workflowParameters.put("node_ids", new String[] { nodeOperationExecRequest.getNodeTemplateName() });
         }
-        if (MapUtils.isNotEmpty(operation.getInputParameters())) {
+        Map<String, IValue> inputParameters = null;
+        if (operation != null) {
+            // operation can be null in case of operation only known at blueprint level
+            inputParameters = operation.getInputParameters();
+        }
+        if (MapUtils.isNotEmpty(inputParameters) || MapUtils.isNotEmpty(nodeOperationExecRequest.getParameters())) {
             Map<String, Object> inputs = Maps.newHashMap();
             Map<String, Object> process = Maps.newHashMap();
             Map<String, String> inputParameterValues = Maps.newHashMap();
@@ -78,38 +87,39 @@ public class CustomWorkflowService extends RuntimeService {
             workflowParameters.put("operation_kwargs", inputs);
             inputs.put("process", process);
             process.put("env", inputParameterValues);
-            Map<String, IValue> inputParameters = operation.getInputParameters();
-            for (Map.Entry<String, IValue> inputParameterEntry : inputParameters.entrySet()) {
-                String parameterName = inputParameterEntry.getKey();
-                String parameterValue = null;
-                if (inputParameterEntry.getValue() instanceof FunctionPropertyValue) {
-                    FunctionPropertyValue function = (FunctionPropertyValue) inputParameterEntry.getValue();
-                    if (ToscaFunctionConstants.GET_PROPERTY.equals(function.getFunction())) {
-                        parameterValue = FunctionEvaluator.evaluateGetPropertyFunction(function, node, deployment.getAllNodes());
-                    } else if (ToscaFunctionConstants.GET_ATTRIBUTE.equals(function.getFunction())) {
-                        String resolvedKeyword = FunctionEvaluator.getPaaSTemplatesFromKeyword(node, function.getTemplateName(), deployment.getAllNodes())
-                                .iterator().next().getId();
-                        try {
-                            Map<String, String> attributes = MapUtil.toString(runtimePropertiesService
-                                    .evaluate(deployment.getDeploymentPaaSId(), resolvedKeyword, function.getElementNameToFetch()).get());
-                            if (MapUtils.isEmpty(attributes)) {
-                                throw new OperationExecutionException("Node " + node.getId() + " do not have any instance at this moment");
-                            } else if (attributes.size() > 1) {
-                                // TODO how to manage this use case
-                                throw new OperationExecutionException("get_attribute for custom command is not supported for scaled node");
-                            } else {
-                                parameterValue = String.valueOf(attributes.values().iterator().next());
+            if (MapUtils.isNotEmpty(inputParameters)) {
+                for (Map.Entry<String, IValue> inputParameterEntry : inputParameters.entrySet()) {
+                    String parameterName = inputParameterEntry.getKey();
+                    String parameterValue = null;
+                    if (inputParameterEntry.getValue() instanceof FunctionPropertyValue) {
+                        FunctionPropertyValue function = (FunctionPropertyValue) inputParameterEntry.getValue();
+                        if (ToscaFunctionConstants.GET_PROPERTY.equals(function.getFunction())) {
+                            parameterValue = FunctionEvaluator.evaluateGetPropertyFunction(function, node, deployment.getAllNodes());
+                        } else if (ToscaFunctionConstants.GET_ATTRIBUTE.equals(function.getFunction())) {
+                            String resolvedKeyword = FunctionEvaluator.getPaaSTemplatesFromKeyword(node, function.getTemplateName(), deployment.getAllNodes())
+                                    .iterator().next().getId();
+                            try {
+                                Map<String, String> attributes = MapUtil.toString(runtimePropertiesService.evaluate(deployment.getDeploymentPaaSId(),
+                                        resolvedKeyword, function.getElementNameToFetch()).get());
+                                if (MapUtils.isEmpty(attributes)) {
+                                    throw new OperationExecutionException("Node " + node.getId() + " do not have any instance at this moment");
+                                } else if (attributes.size() > 1) {
+                                    // TODO how to manage this use case
+                                    throw new OperationExecutionException("get_attribute for custom command is not supported for scaled node");
+                                } else {
+                                    parameterValue = String.valueOf(attributes.values().iterator().next());
+                                }
+                            } catch (Exception e) {
+                                throw new OperationExecutionException("Could not evaluate get_attribute function", e);
                             }
-                        } catch (Exception e) {
-                            throw new OperationExecutionException("Could not evaluate get_attribute function", e);
+                        } else {
+                            throw new OperationExecutionException("Only support get_property or get_attribute for custom command parameters");
                         }
-                    } else {
-                        throw new OperationExecutionException("Only support get_property or get_attribute for custom command parameters");
+                    } else if (inputParameterEntry.getValue() instanceof ScalarPropertyValue) {
+                        parameterValue = ((ScalarPropertyValue) inputParameterEntry.getValue()).getValue();
                     }
-                } else if (inputParameterEntry.getValue() instanceof ScalarPropertyValue) {
-                    parameterValue = ((ScalarPropertyValue) inputParameterEntry.getValue()).getValue();
+                    inputParameterValues.put(parameterName, parameterValue);
                 }
-                inputParameterValues.put(parameterName, parameterValue);
             }
             if (MapUtils.isNotEmpty(nodeOperationExecRequest.getParameters())) {
                 inputParameterValues.putAll(nodeOperationExecRequest.getParameters());
@@ -142,18 +152,15 @@ public class CustomWorkflowService extends RuntimeService {
             throw new OperationExecutionException("Node " + nodeOperationExecRequest.getNodeTemplateName() + " do not exist in the deployment");
         }
         PaaSNodeTemplate node = deployment.getAllNodes().get(nodeOperationExecRequest.getNodeTemplateName());
+
+        Operation operation = null;
         Map<String, Interface> nodeInterfaces = util.getNonNative().getNodeInterfaces(node);
-        if (MapUtils.isEmpty(nodeInterfaces) || !nodeInterfaces.containsKey(nodeOperationExecRequest.getInterfaceName())) {
-            throw new OperationExecutionException(
-                    "Interface " + nodeOperationExecRequest.getInterfaceName() + " do not exist for node " + nodeOperationExecRequest.getNodeTemplateName());
+        if (!MapUtils.isEmpty(nodeInterfaces) && nodeInterfaces.containsKey(nodeOperationExecRequest.getInterfaceName())) {
+            Map<String, Operation> interfaceOperations = nodeInterfaces.get(nodeOperationExecRequest.getInterfaceName()).getOperations();
+            if (!MapUtils.isEmpty(interfaceOperations) && interfaceOperations.containsKey(nodeOperationExecRequest.getOperationName())) {
+                operation = interfaceOperations.get(nodeOperationExecRequest.getOperationName());
+            }
         }
-        Map<String, Operation> interfaceOperations = nodeInterfaces.get(nodeOperationExecRequest.getInterfaceName()).getOperations();
-        if (MapUtils.isEmpty(interfaceOperations) || !interfaceOperations.containsKey(nodeOperationExecRequest.getOperationName())) {
-            throw new OperationExecutionException(
-                    "Operation " + nodeOperationExecRequest.getOperationName() + " do not exist for interface " + nodeOperationExecRequest.getInterfaceName());
-        }
-        // Here we are safe, the node, the interface and the operation exists
-        Operation operation = interfaceOperations.get(nodeOperationExecRequest.getOperationName());
 
         ListenableFuture<Deployment> operationExecutionFuture = waitForExecutionFinish(executionDAO.asyncStart(deployment.getDeploymentPaaSId(),
                 Workflow.EXECUTE_OPERATION, buildWorkflowParameters(deployment, util, nodeOperationExecRequest, node, operation), true, false));

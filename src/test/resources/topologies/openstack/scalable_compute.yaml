@@ -6,9 +6,9 @@ template_author: admin
 
 imports:
   - tosca-normative-types:1.0.0-SNAPSHOT
-  - openstack-types:1.1.0-SNAPSHOT
+  - openstack-types:$projectVersion
   - support_hss_types:1.0-SNAPSHOT
-  - cloudify3-common-types:1.1.0-SNAPSHOT
+  - cloudify3-common-types:$projectVersion
 
 topology_template:
 

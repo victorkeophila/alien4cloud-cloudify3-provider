@@ -9,8 +9,8 @@ imports:
   - alien-base-types:1.1.0-SNAPSHOT
   - tomcat-war-types:2.0.0-SNAPSHOT
   - artifact-test-types:1.0.0-SNAPSHOT
-  - cloudify3-common-types:1.1.0-SNAPSHOT
-  - openstack-types:1.1.0-SNAPSHOT
+  - cloudify3-common-types:$projectVersion
+  - openstack-types:$projectVersion
 
 topology_template:
 

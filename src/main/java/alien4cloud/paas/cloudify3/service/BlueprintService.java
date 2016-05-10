@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -17,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.elasticsearch.common.collect.Sets;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -82,6 +84,19 @@ public class BlueprintService {
     private Path recipeDirectoryPath;
 
     private Path pluginRecipeResourcesPath;
+
+    private Set<BlueprintGeneratorExtension> blueprintGeneratorExtensions;
+
+    public synchronized void addBlueprintGeneratorExtension(BlueprintGeneratorExtension blueprintGeneratorExtension) {
+        if (blueprintGeneratorExtensions == null) {
+            blueprintGeneratorExtensions = Sets.newLinkedHashSet();
+        }
+        blueprintGeneratorExtensions.add(blueprintGeneratorExtension);
+    }
+
+    public synchronized void removeBlueprintGeneratorExtension(BlueprintGeneratorExtension blueprintGeneratorExtension) {
+        blueprintGeneratorExtensions.remove(blueprintGeneratorExtension);
+    }
 
     @PostConstruct
     public void postConstruct() throws IOException {
@@ -250,6 +265,12 @@ public class BlueprintService {
         Files.copy(pluginRecipeResourcesPath.resolve("cloudify-openstack-plugin/cloudify-openstack-plugin.zip"),
                 generatedBlueprintDirectoryPath.resolve("plugins/cloudify-openstack-plugin.zip"));
 
+        if (CollectionUtils.isNotEmpty(blueprintGeneratorExtensions)) {
+            for (BlueprintGeneratorExtension blueprintGeneratorExtension : blueprintGeneratorExtensions) {
+                blueprintGeneratorExtension.blueprintGenerationHook(pluginRecipeResourcesPath, generatedBlueprintDirectoryPath, context);
+            }
+        }
+
         // Generate the blueprint at the end
         VelocityUtil.generate(pluginRecipeResourcesPath.resolve("velocity/blueprint.yaml.vm"), generatedBlueprintFilePath, context);
         return generatedBlueprintFilePath;
@@ -350,4 +371,9 @@ public class BlueprintService {
         recipeDirectoryPath = cloudifyPath.resolve("recipes");
         Files.createDirectories(recipeDirectoryPath);
     }
+
+    public static interface BlueprintGeneratorExtension {
+        void blueprintGenerationHook(Path pluginRecipeResourcesPath, Path generatedBlueprintDirectoryPath, Map<String, Object> context) throws IOException;
+    }
+
 }
