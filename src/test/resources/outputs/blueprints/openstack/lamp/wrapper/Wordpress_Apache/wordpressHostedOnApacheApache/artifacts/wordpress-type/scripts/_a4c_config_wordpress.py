@@ -326,4 +326,5 @@ for k,v in parsed_output['outputs'].items():
 
 ctx.source.instance.runtime_properties['wordpress_url'] = r'http://' + get_attribute(ctx.source, 'public_ip_address') + r':' + r'80' + r'/'
 ctx.source.instance.update()
+ctx.target.instance.runtime_properties['apache_url'] = r'http://' + get_attribute(ctx.target, 'public_ip_address') + r':' + r'80' + r'/'
 ctx.target.instance.update()

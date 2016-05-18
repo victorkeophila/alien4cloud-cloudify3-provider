@@ -1,12 +1,5 @@
 package alien4cloud.paas.cloudify3.util.mapping;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import lombok.extern.slf4j.Slf4j;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ComplexPropertyValue;
 import alien4cloud.model.components.ListPropertyValue;
@@ -14,9 +7,15 @@ import alien4cloud.model.components.PropertyValue;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.paas.cloudify3.error.PropertyValueMappingException;
 import alien4cloud.utils.services.PropertyValueService;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * Simple utility that deep
@@ -35,8 +34,7 @@ public final class PropertyValueUtil {
      *            The properties to map
      * @return A map of mapped properties
      */
-    public static Map<String, AbstractPropertyValue> mapProperties(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings,
-            String nodeType,
+    public static Map<String, AbstractPropertyValue> mapProperties(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings, String nodeType,
             Map<String, AbstractPropertyValue> properties) {
 
         if (allTypesPropertiesMappings == null || allTypesPropertiesMappings.isEmpty()) {
@@ -109,8 +107,7 @@ public final class PropertyValueUtil {
                     processComplexPropertyMapping(allTypesPropertiesMappings, propertyName, sourcePropertyValue, mappedProperties, mapping);
                 }
             }
-        }
-        else {
+        } else {
             mergeAndAddMappedProperty(propertyName, sourcePropertyValue, mappedProperties);
         }
     }
@@ -173,6 +170,17 @@ public final class PropertyValueUtil {
                 mapProperty(allTypesPropertiesMappings, typeMapping, complexPropertyEntryName, complexPropertyEntryValue, itemProperties);
             }
             mappedProperties.put(propertyName, propertyValueFromObject(itemProperties));
+
+            // then, we process the simple mapping registered for this property
+            if (CollectionUtils.isNotEmpty(complexPropertyMapping.getRelatedSimplePropertiesMapping())) {
+                for (IPropertyMapping propertyMapping : complexPropertyMapping.getRelatedSimplePropertiesMapping()) {
+                    {
+                        processPropertyMapping(allTypesPropertiesMappings, (PropertyMapping) propertyMapping, propertyName,
+                                (PropertyValue) mappedProperties.get(propertyName), mappedProperties);
+                    }
+
+                }
+            }
         }
     }
 
@@ -196,8 +204,8 @@ public final class PropertyValueUtil {
                 // if there is a specified unit, convert the value to the expected unit.
                 if (targetMapping.getUnit() != null) {
                     // need the property type to IComparablePropertyType
-                    sourceValue = PropertyValueService.getValueInUnit(sourceValue, targetMapping.getUnit(), targetMapping.isCeil(), subMapping
-                            .getSourceMapping().getPropertyDefinition());
+                    sourceValue = PropertyValueService.getValueInUnit(sourceValue, targetMapping.getUnit(), targetMapping.isCeil(),
+                            subMapping.getSourceMapping().getPropertyDefinition());
                 }
 
                 if (targetMapping.getPath() == null) {
@@ -215,7 +223,7 @@ public final class PropertyValueUtil {
                         mappedProperties.put(targetMapping.getProperty(), targetProperty);
                     }
                     // set the value
-                    setValue(targetProperty.getValue(), targetMapping.getPath(), targetValue);
+                    setValueInMap(targetProperty.getValue(), targetMapping.getPath(), targetValue);
                 }
             }
         }
@@ -276,8 +284,8 @@ public final class PropertyValueUtil {
                     // if there is a specified unit, convert the value to the expected unit.
                     if (targetMapping.getUnit() != null) {
                         // need the property type to IComparablePropertyType
-                        sourceValue = PropertyValueService.getValueInUnit(sourceValue, targetMapping.getUnit(), targetMapping.isCeil(), subMapping
-                                .getSourceMapping().getPropertyDefinition());
+                        sourceValue = PropertyValueService.getValueInUnit(sourceValue, targetMapping.getUnit(), targetMapping.isCeil(),
+                                subMapping.getSourceMapping().getPropertyDefinition());
                     }
 
                     PropertyValue targetProperty = (PropertyValue) mappedProperties.get(targetMapping.getProperty());
@@ -368,7 +376,10 @@ public final class PropertyValueUtil {
         for (int i = 0; i < pathElements.length - 1; i++) {
             String pathElement = pathElements[i];
             if (current instanceof Map) {
-                current = ((Map) current).get(pathElement);
+                current = getOrInit((Map) current, pathElement);
+                // current = ((Map) current).get(pathElement);
+            } else if (current == null) {
+                current = new HashMap<>();
             } else {
                 throw new PropertyValueMappingException("Expected a map");
             }
@@ -379,6 +390,33 @@ public final class PropertyValueUtil {
         } else {
             throw new PropertyValueMappingException("Expected a map");
         }
+    }
+
+    private static Object getOrInit(Map map, String element) {
+        Object value = map.get(element);
+        if (value == null) {
+            value = new HashMap<>();
+            map.put(element, value);
+        }
+        return value;
+    }
+
+    public static void setValueInMap(Object target, String path, Object value) {
+        if (target instanceof Map) {
+            Map current = (Map) target;
+            String currentPath = path;
+            String[] pathElements = currentPath.split("\\.");
+            if (pathElements.length > 1) {
+                currentPath = currentPath.substring(pathElements[0].length() + 1);
+                Object midwayValue = getOrInit(current, pathElements[0]);
+                setValueInMap(midwayValue, currentPath, value);
+            } else {
+                current.put(currentPath, value);
+            }
+            return;
+        }
+
+        throw new PropertyValueMappingException("Expected a map");
     }
 
     /**
@@ -423,8 +461,8 @@ public final class PropertyValueUtil {
         } else if (propertyValueObject instanceof String) {
             clone = propertyValueObject;
         } else {
-            log.warn("Property deep clone is just making a simple copy for type {} and value {}. Expecting a String for these situations.", propertyValueObject
-                    .getClass().getName(), propertyValueObject);
+            log.warn("Property deep clone is just making a simple copy for type {} and value {}. Expecting a String for these situations.",
+                    propertyValueObject.getClass().getName(), propertyValueObject);
             clone = propertyValueObject;
         }
 
