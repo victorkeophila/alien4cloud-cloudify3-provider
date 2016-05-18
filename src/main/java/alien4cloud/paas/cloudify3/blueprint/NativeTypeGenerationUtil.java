@@ -33,13 +33,13 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
 
     public String formatTextValue(int indentLevel, String text) {
         if (text != null && text.contains("\n")) {
+            indentLevel++;
             StringBuilder indentationBuffer = new StringBuilder();
             for (int i = 0; i < indentLevel; i++) {
                 indentationBuffer.append("  ");
             }
             String indentation = indentationBuffer.toString();
             StringBuilder formattedTextBuffer = new StringBuilder("|\n");
-            indentation += "  ";
             String[] lines = text.split("\n");
             for (String line : lines) {
                 formattedTextBuffer.append(indentation).append(line).append("\n");
@@ -111,7 +111,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
         for (Map.Entry<String, AbstractPropertyValue> propertyEntry : properties.entrySet()) {
             if (propertyEntry.getValue() != null) {
                 buffer.append("\n").append(indent(indentLevel)).append(propertyEntry.getKey()).append(": ")
-                        .append(formatPropertyValue(indentLevel + 1, propertyEntry.getValue()));
+                        .append(formatPropertyValue(indentLevel, propertyEntry.getValue()));
             }
         }
         return buffer.toString();
@@ -172,6 +172,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     }
 
     private String formatMapValue(boolean appendFirstLf, int indentLevel, Map<String, Object> value) {
+        indentLevel++;
         StringBuilder buffer = new StringBuilder();
         boolean isFirst = true;
         for (Map.Entry<String, Object> valueEntry : value.entrySet()) {
@@ -179,7 +180,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
                 if (!isFirst || appendFirstLf) {
                     buffer.append("\n").append(indent(indentLevel));
                 }
-                buffer.append(valueEntry.getKey()).append(": ").append(formatValue(indentLevel + 1, valueEntry.getValue()));
+                buffer.append(valueEntry.getKey()).append(": ").append(formatValue(indentLevel, valueEntry.getValue()));
                 if (isFirst) {
                     isFirst = false;
                 }
@@ -189,10 +190,11 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     }
 
     private String formatListValue(int indentLevel, List<Object> value) {
+        indentLevel++;
         StringBuilder buffer = new StringBuilder();
         for (Object element : value) {
             if (element != null) {
-                buffer.append("\n").append(indent(indentLevel)).append("- ").append(formatValue(false, indentLevel + 1, element));
+                buffer.append("\n").append(indent(indentLevel)).append("- ").append(formatValue(false, indentLevel, element));
             }
         }
         return buffer.toString();
