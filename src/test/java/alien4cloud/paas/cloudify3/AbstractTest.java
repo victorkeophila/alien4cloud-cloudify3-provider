@@ -1,5 +1,6 @@
 package alien4cloud.paas.cloudify3;
 
+import alien4cloud.model.components.CSARSource;
 import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.paas.cloudify3.configuration.CloudConfigurationHolder;
@@ -113,7 +114,7 @@ public abstract class AbstractTest {
         List<ParsingError> parsingErrors = Lists.newArrayList();
         for (PluginArchive pluginArchive : cloudifyOrchestrator.pluginArchives()) {
             // index the archive in alien catalog
-            archiveIndexer.importArchive(pluginArchive.getArchive(), pluginArchive.getArchiveFilePath(), parsingErrors);
+            archiveIndexer.importArchive(pluginArchive.getArchive(), CSARSource.OTHER, pluginArchive.getArchiveFilePath(), parsingErrors);
         }
 
         // index archives of provided locations in alien catalog
@@ -124,25 +125,11 @@ public abstract class AbstractTest {
                 if (locationConfigurator != null) {
                     for (PluginArchive pluginArchive : locationConfigurator.pluginArchives()) {
                         // index the archive in alien catalog
-                        archiveIndexer.importArchive(pluginArchive.getArchive(), pluginArchive.getArchiveFilePath(), parsingErrors);
+                        archiveIndexer.importArchive(pluginArchive.getArchive(), CSARSource.OTHER, pluginArchive.getArchiveFilePath(), parsingErrors);
                     }
                 }
             }
         }
-
-        // for (PluginArchive pluginArchive : openstackLocationConfigurator.pluginArchives()) {
-        // // index the archive in alien catalog
-        // archiveIndexer.importArchive(pluginArchive.getArchive(), pluginArchive.getArchiveFilePath(), parsingErrors);
-        // }
-        // for (PluginArchive pluginArchive : amazonLocationConfigurator.pluginArchives()) {
-        // // index the archive in alien catalog
-        // archiveIndexer.importArchive(pluginArchive.getArchive(), pluginArchive.getArchiveFilePath(), parsingErrors);
-        // }
-        //
-        // for (PluginArchive pluginArchive : byonLocationConfigurator.pluginArchives()) {
-        // // index the archive in alien catalog
-        // archiveIndexer.importArchive(pluginArchive.getArchive(), pluginArchive.getArchiveFilePath(), parsingErrors);
-        // }
         cloudConfigurationHolder.setConfiguration(new CloudifyOrchestratorFactory().getDefaultConfiguration());
     }
 

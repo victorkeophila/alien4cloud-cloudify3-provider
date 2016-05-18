@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import javax.annotation.Resource;
+import alien4cloud.model.components.CSARSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -52,7 +53,7 @@ public class CSARUtil {
         FileUtil.zip(path, zipPath);
         Authentication auth = new TestingAuthenticationToken(Role.ADMIN, "", Role.ADMIN.name());
         SecurityContextHolder.getContext().setAuthentication(auth);
-        ParsingResult<Csar> result = archiveUploadService.upload(zipPath);
+        ParsingResult<Csar> result = archiveUploadService.upload(zipPath, CSARSource.UPLOAD);
         if (result.getContext().getParsingErrors() != null && !result.getContext().getParsingErrors().isEmpty()) {
             boolean hasError = false;
             for (ParsingError error : result.getContext().getParsingErrors()) {
