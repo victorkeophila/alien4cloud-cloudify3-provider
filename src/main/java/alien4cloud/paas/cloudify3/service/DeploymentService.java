@@ -21,7 +21,7 @@ import alien4cloud.paas.cloudify3.model.Workflow;
 import alien4cloud.paas.cloudify3.restclient.BlueprintClient;
 import alien4cloud.paas.cloudify3.restclient.DeploymentClient;
 import alien4cloud.paas.cloudify3.service.model.CloudifyDeployment;
-import alien4cloud.paas.exception.PaaSAlreadyDeployedException;
+import alien4cloud.paas.exception.PaaSNotYetDeployedException;
 import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.PaaSDeploymentContext;
 
@@ -69,16 +69,6 @@ public class DeploymentService extends RuntimeService {
      * @return A future linked to the install workflow completed execution.
      */
     public ListenableFuture<Deployment> deploy(final CloudifyDeployment alienDeployment) {
-        DeploymentStatus currentStatus = statusService.getStatus(alienDeployment.getDeploymentPaaSId());
-        if (!DeploymentStatus.UNDEPLOYED.equals(currentStatus)) {
-            return Futures.immediateFailedFuture(new PaaSAlreadyDeployedException("Deployment " + alienDeployment.getDeploymentPaaSId()
-                    + " is active (must undeploy first) or is in unknown state (must wait for status available)"));
-        }
-        // Cloudify 3 will use recipe id to identify a blueprint and a deployment instead of deployment id
-        log.info("Deploying {} for alien deployment {}", alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId());
-        eventService.registerDeployment(alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId());
-        statusService.registerDeployment(alienDeployment.getDeploymentPaaSId());
-
         // generate the blueprint and return in case of failure.
         Path blueprintPath;
         try {
@@ -116,7 +106,7 @@ public class DeploymentService extends RuntimeService {
         ListenableFuture<Deployment> createdDeployment = waitForDeploymentExecutionsFinish(creatingDeployment);
 
         // Trigger the install workflow and then wait until the install workflow is completed
-        ListenableFuture<Execution> installingExecution = Futures.transform(createdDeployment, installExecutionFunction());
+        ListenableFuture<Execution> installingExecution = Futures.transform(createdDeployment, installExecutionFunction(alienDeployment.getDeploymentPaaSId()));
         ListenableFuture<Deployment> installedExecution = waitForExecutionFinish(installingExecution);
 
         // Add a callback to handled failures and provide alien with the correct events.
@@ -141,10 +131,13 @@ public class DeploymentService extends RuntimeService {
      * Wraps the deployment client asyncCreate operation into an AsyncFunction so it can be chained using Futures.transform and uses the Blueprint as a
      * parameter once available.
      */
-    private AsyncFunction<Deployment, Execution> installExecutionFunction() {
+    private AsyncFunction<Deployment, Execution> installExecutionFunction(final String paasDeploymentId) {
         return new AsyncFunction<Deployment, Execution>() {
             @Override
             public ListenableFuture<Execution> apply(Deployment deployment) throws Exception {
+                // now that the create_deployment_environment has been terminated we switch to DEPLOYMENT_IN_PROGRESS state
+                // so from now, undeployment is possible
+                statusService.registerDeploymentStatus(paasDeploymentId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
                 return executionClient.asyncStart(deployment.getId(), Workflow.INSTALL, null, false, false);
             }
         };
@@ -162,8 +155,15 @@ public class DeploymentService extends RuntimeService {
      * @return
      */
     public ListenableFuture<?> undeploy(final PaaSDeploymentContext deploymentContext) {
-        // check that the application is not already undeployed
         DeploymentStatus currentStatus = statusService.getStatus(deploymentContext.getDeploymentPaaSId());
+
+        // we shouldn't trigger undeployment if it's in its init stage
+        if (DeploymentStatus.INIT_DEPLOYMENT.equals(currentStatus)) {
+            return Futures.immediateFailedFuture(new PaaSNotYetDeployedException("Deployment " + deploymentContext.getDeploymentPaaSId()
+                    + " is not yet deploy nor in progess so you can't undeploy it in this early stage"));
+        }
+
+        // check that the application is not already undeployed
         if (DeploymentStatus.UNDEPLOYED.equals(currentStatus) || DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS.equals(currentStatus)) {
             log.info("Deployment " + deploymentContext.getDeploymentPaaSId() + " has already been undeployed");
             return Futures.immediateFuture(null);

@@ -35,6 +35,7 @@ import alien4cloud.paas.cloudify3.service.StatusService;
 import alien4cloud.paas.cloudify3.service.model.CloudifyDeployment;
 import alien4cloud.paas.cloudify3.util.FutureUtil;
 import alien4cloud.paas.exception.OperationExecutionException;
+import alien4cloud.paas.exception.PaaSAlreadyDeployedException;
 import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.AbstractMonitorEvent;
 import alien4cloud.paas.model.DeploymentStatus;
@@ -113,6 +114,21 @@ public class CloudifyOrchestrator implements IOrchestratorPlugin<CloudConfigurat
 
     @Override
     public void deploy(PaaSTopologyDeploymentContext deploymentContext, final IPaaSCallback callback) {
+
+        // first of all, let's check this deployment's status
+        DeploymentStatus currentStatus = statusService.getStatus(deploymentContext.getDeploymentPaaSId());
+        if (!DeploymentStatus.UNDEPLOYED.equals(currentStatus)) {
+            log.warn("Not possible to undeploy {} for alien deployment {}: deployment is currently in it's init stage.",
+                    deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
+            callback.onFailure(new PaaSAlreadyDeployedException("Deployment " + deploymentContext.getDeploymentPaaSId()
+                    + " is active (must undeploy first) or is in unknown state (must wait for status available)"));
+            return;
+        }
+        // Cloudify 3 will use recipe id to identify a blueprint and a deployment instead of deployment id
+        log.info("Deploying {} for alien deployment {}", deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
+        eventService.registerDeployment(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
+        statusService.registerDeployment(deploymentContext.getDeploymentPaaSId());
+
         applicationContext.publishEvent(new AboutToDeployTopologyEvent(this, deploymentContext));
         // TODO Better do it in Alien4Cloud or in plugin ?
         propertyEvaluatorService.processGetPropertyFunction(deploymentContext);
