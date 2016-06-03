@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * Simple utility that deep
@@ -170,7 +169,7 @@ public final class PropertyValueUtil {
 
         // then, we process the simple mapping registered for this property
         // this allows for example to change the property name on the target
-        if (CollectionUtils.isNotEmpty(complexPropertyMapping.getRelatedSimplePropertiesMapping())) {
+        if (complexPropertyMapping.getRelatedSimplePropertiesMapping() != null) {
             for (IPropertyMapping propertyMapping : complexPropertyMapping.getRelatedSimplePropertiesMapping()) {
                 processPropertyMapping(allTypesPropertiesMappings, (PropertyMapping) propertyMapping, propertyName, mappingResult, mappedProperties);
             }

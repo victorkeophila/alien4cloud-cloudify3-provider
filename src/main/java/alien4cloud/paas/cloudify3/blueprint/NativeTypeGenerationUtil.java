@@ -156,8 +156,8 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     }
 
     private String formatValue(boolean appendLf, int indentLevel, Object value) {
-        if (value instanceof String) {
-            return formatTextValue(indentLevel, (String) value);
+        if (isPrimitiveType(value)) {
+            return formatTextValue(indentLevel, String.valueOf(value));
         } else if (value instanceof Map) {
             return formatMapValue(appendLf, indentLevel, (Map<String, Object>) value);
         } else if (value instanceof Object[]) {
@@ -169,6 +169,10 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
         } else {
             throw new NotSupportedException("Do not support other types than string map and list");
         }
+    }
+
+    private boolean isPrimitiveType(Object value) {
+        return value instanceof String || value instanceof Number || value instanceof Boolean;
     }
 
     private String formatMapValue(boolean appendFirstLf, int indentLevel, Map<String, Object> value) {
