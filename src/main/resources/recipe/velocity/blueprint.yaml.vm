@@ -8,7 +8,6 @@ This template is used to generate cloudify 3 recipe from alien model
 *#
 #parse("provider/common/non_native_nodes.yaml.vm")
 tosca_definitions_version: $cloud.getConfigurationLocation($deployment.locationType).getDsl()
-#parse("provider/common/non_native_nodes.yaml.vm")
 
 imports:
 #foreach($import in $cloud.getConfigurationLocation($deployment.locationType).getImports())
