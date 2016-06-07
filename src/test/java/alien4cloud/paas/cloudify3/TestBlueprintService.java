@@ -198,4 +198,22 @@ public class TestBlueprintService extends AbstractTest {
                     });
         }
     }
+
+    @Test
+    public void testGetProperty() {
+        String topology = LAMP_TOPOLOGY;
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        for (String locationName : LOCATIONS) {
+            if (!applicationUtil.isTopologyExistForLocation(topology, locationName)) {
+                log.warn("Topology {} do not exist for location {}", topology, locationName);
+                return;
+            }
+            // String recordedDirectory = "src/test/resources/outputs/blueprints/" + locationName + "/" + locationName
+            PaaSTopologyDeploymentContext context = deploymentLauncher.buildPaaSDeploymentContext(stackTraceElements[2].getMethodName(), topology, locationName);
+            // context.getPaaSTopology().getNonNatives().get(0).getInterfaces().g
+            propertyEvaluatorService.processGetPropertyFunction(context);
+            context.getPaaSTopology().getAllNodes();
+
+        }
+    }
 }

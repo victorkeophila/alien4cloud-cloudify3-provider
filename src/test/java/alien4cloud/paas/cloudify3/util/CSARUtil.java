@@ -110,6 +110,10 @@ public class CSARUtil {
         uploadCSAR(Paths.get("./src/test/resources/components/support-hss"));
     }
 
+    public void uploadCustomApache() throws Exception {
+        uploadCSAR(Paths.get("./src/test/resources/components/apache"));
+    }
+
     public void uploadAll() throws Exception {
         repositoryManager.cloneOrCheckout(ARTIFACTS_DIRECTORY, URL_FOR_SAMPLES, "master", SAMPLES_TYPES_NAME);
         repositoryManager.cloneOrCheckout(ARTIFACTS_DIRECTORY, URL_FOR_NORMATIVES, "master", TOSCA_NORMATIVE_TYPES_NAME);
@@ -117,7 +121,7 @@ public class CSARUtil {
         uploadNormativeTypes();
         uploadStorage();
         uploadTomcat();
-        uploadApacheTypes();
+        uploadCustomApache();
         uploadMySqlTypes();
         uploadPHPTypes();
         uploadWordpress();

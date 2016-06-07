@@ -6,12 +6,8 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import alien4cloud.exception.InvalidArgumentException;
-import alien4cloud.model.components.ConcatPropertyValue;
-import alien4cloud.model.components.FunctionPropertyValue;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.Operation;
-import alien4cloud.model.components.ScalarPropertyValue;
+import alien4cloud.model.components.*;
+import alien4cloud.model.topology.Capability;
 import alien4cloud.paas.IPaaSTemplate;
 import alien4cloud.paas.function.FunctionEvaluator;
 import alien4cloud.paas.model.PaaSNodeTemplate;
@@ -48,6 +44,14 @@ public class PropertyEvaluatorService {
         }
     }
 
+    private void processCapability(Capability capability, IPaaSTemplate node, Map<String, PaaSNodeTemplate> allNodes) {
+        if (capability != null && capability.getProperties() != null) {
+            for (Map.Entry<String, AbstractPropertyValue> attributeEntry : capability.getProperties().entrySet()) {
+                attributeEntry.setValue((AbstractPropertyValue)process(attributeEntry.getValue(), node, allNodes));
+            }
+        }
+    }
+
     /**
      * Process the deployment topology, every get_property will be replaced by its own static value retrieved from the topology
      * 
@@ -56,13 +60,18 @@ public class PropertyEvaluatorService {
     public void processGetPropertyFunction(PaaSTopologyDeploymentContext deploymentContext) {
         Map<String, PaaSNodeTemplate> allNodes = deploymentContext.getPaaSTopology().getAllNodes();
         for (PaaSNodeTemplate node : allNodes.values()) {
-            processAttributes(node.getNodeTemplate().getAttributes(), node, allNodes);
+            processAttributes(node.getTemplate().getAttributes(), node, allNodes);
             processInterfaces(node.getInterfaces(), node, allNodes);
             List<PaaSRelationshipTemplate> relationships = node.getRelationshipTemplates();
             if (relationships != null) {
                 for (PaaSRelationshipTemplate relationship : relationships) {
-                    processAttributes(relationship.getRelationshipTemplate().getAttributes(), relationship, allNodes);
+                    processAttributes(relationship.getTemplate().getAttributes(), relationship, allNodes);
                     processInterfaces(relationship.getInterfaces(), relationship, allNodes);
+                }
+            }
+            if (node.getTemplate().getCapabilities() != null) {
+                for (Map.Entry<String, Capability> capabilityEntry : node.getTemplate().getCapabilities().entrySet()) {
+                    processCapability(capabilityEntry.getValue(), node, allNodes);
                 }
             }
         }
