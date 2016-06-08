@@ -1,12 +1,15 @@
 package alien4cloud.paas.cloudify3.blueprint;
 
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.collect.Maps;
+
 import alien4cloud.model.common.Tag;
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.FunctionPropertyValue;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.PropertyValue;
-import alien4cloud.model.components.ScalarPropertyValue;
+import alien4cloud.model.components.*;
 import alien4cloud.paas.cloudify3.configuration.MappingConfiguration;
 import alien4cloud.paas.cloudify3.error.BadConfigurationException;
 import alien4cloud.paas.cloudify3.service.PropertyEvaluatorService;
@@ -16,11 +19,6 @@ import alien4cloud.paas.cloudify3.util.mapping.PropertiesMappingUtil;
 import alien4cloud.paas.cloudify3.util.mapping.PropertyValueUtil;
 import alien4cloud.paas.exception.NotSupportedException;
 import alien4cloud.utils.TagUtil;
-import com.google.common.collect.Maps;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
 
@@ -104,6 +102,14 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
             buffer.append("  ");
         }
         return buffer.toString();
+    }
+
+    public Map<String, AbstractPropertyValue> addPropertyValueIfMissing(Map<String, AbstractPropertyValue> properties, String key, String value) {
+        Map<String, AbstractPropertyValue> copy = new HashMap<>(properties);
+        if (!copy.containsKey(key) || copy.get(key) == null) {
+            copy.put(key, new ScalarPropertyValue(value));
+        }
+        return copy;
     }
 
     public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties) {
