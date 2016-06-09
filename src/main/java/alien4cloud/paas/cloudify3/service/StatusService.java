@@ -22,20 +22,36 @@ import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.cloudify3.configuration.CloudConfigurationHolder;
 import alien4cloud.paas.cloudify3.configuration.MappingConfigurationHolder;
-import alien4cloud.paas.cloudify3.model.*;
+import alien4cloud.paas.cloudify3.model.AbstractCloudifyModel;
+import alien4cloud.paas.cloudify3.model.Deployment;
+import alien4cloud.paas.cloudify3.model.Execution;
+import alien4cloud.paas.cloudify3.model.ExecutionStatus;
+import alien4cloud.paas.cloudify3.model.Node;
+import alien4cloud.paas.cloudify3.model.NodeInstance;
+import alien4cloud.paas.cloudify3.model.NodeInstanceStatus;
+import alien4cloud.paas.cloudify3.model.Workflow;
 import alien4cloud.paas.cloudify3.restclient.DeploymentClient;
 import alien4cloud.paas.cloudify3.restclient.ExecutionClient;
 import alien4cloud.paas.cloudify3.restclient.NodeClient;
 import alien4cloud.paas.cloudify3.restclient.NodeInstanceClient;
 import alien4cloud.paas.cloudify3.util.DateUtil;
-import alien4cloud.paas.model.*;
+import alien4cloud.paas.model.DeploymentStatus;
+import alien4cloud.paas.model.InstanceInformation;
+import alien4cloud.paas.model.InstanceStatus;
+import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
+import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.utils.MapUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.*;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.FutureFallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 
 /**
  * Handle all deployment status request
@@ -223,7 +239,7 @@ public class StatusService {
             switch (lastExecution.getWorkflowId()) {
             case Workflow.CREATE_DEPLOYMENT_ENVIRONMENT:
                 if (ExecutionStatus.isInProgress(lastExecution.getStatus()) || ExecutionStatus.isTerminatedSuccessfully(lastExecution.getStatus())) {
-                    return DeploymentStatus.DEPLOYMENT_IN_PROGRESS;
+                    return DeploymentStatus.INIT_DEPLOYMENT;
                 } else if (ExecutionStatus.isTerminatedWithFailure(lastExecution.getStatus())) {
                     return DeploymentStatus.FAILURE;
                 } else {
@@ -400,8 +416,8 @@ public class StatusService {
     public void registerDeployment(String deploymentPaaSId) {
         try {
             cacheLock.writeLock().lock();
-            statusCache.put(deploymentPaaSId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
-            eventService.registerDeploymentEvent(deploymentPaaSId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+            statusCache.put(deploymentPaaSId, DeploymentStatus.INIT_DEPLOYMENT);
+            eventService.registerDeploymentEvent(deploymentPaaSId, DeploymentStatus.INIT_DEPLOYMENT);
         } finally {
             cacheLock.writeLock().unlock();
         }
