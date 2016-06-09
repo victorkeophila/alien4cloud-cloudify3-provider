@@ -1,5 +1,7 @@
 package alien4cloud.paas.cloudify3;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -23,6 +25,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import alien4cloud.component.repository.ArtifactLocalRepository;
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
 import alien4cloud.model.components.DeploymentArtifact;
+import alien4cloud.model.components.FunctionPropertyValue;
+import alien4cloud.model.components.IValue;
+import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.paas.cloudify3.service.BlueprintService;
 import alien4cloud.paas.cloudify3.service.CloudifyDeploymentBuilderService;
 import alien4cloud.paas.cloudify3.service.PropertyEvaluatorService;
@@ -200,20 +205,43 @@ public class TestBlueprintService extends AbstractTest {
     }
 
     @Test
-    public void testGetProperty() {
-        String topology = LAMP_TOPOLOGY;
-        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-        for (String locationName : LOCATIONS) {
-            if (!applicationUtil.isTopologyExistForLocation(topology, locationName)) {
-                log.warn("Topology {} do not exist for location {}", topology, locationName);
-                return;
-            }
-            // String recordedDirectory = "src/test/resources/outputs/blueprints/" + locationName + "/" + locationName
-            PaaSTopologyDeploymentContext context = deploymentLauncher.buildPaaSDeploymentContext(stackTraceElements[2].getMethodName(), topology, locationName);
-            // context.getPaaSTopology().getNonNatives().get(0).getInterfaces().g
-            propertyEvaluatorService.processGetPropertyFunction(context);
-            context.getPaaSTopology().getAllNodes();
+    public void testGetComplexProperty() {
+        String topology = CUSTOM_APACHE_TOPOLOGY;
+        String locationName = "openstack";
 
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        if (!applicationUtil.isTopologyExistForLocation(topology, locationName)) {
+            log.warn("Topology {} do not exist for location {}", topology, locationName);
+            return;
         }
+
+        PaaSTopologyDeploymentContext context = deploymentLauncher.buildPaaSDeploymentContext(stackTraceElements[2].getMethodName(), topology, locationName);
+
+        // check the function of get_property on property
+        IValue value =  context.getPaaSTopology().getNonNatives().get(0).getInterfaces().get("tosca.interfaces.node.lifecycle.Standard").getOperations().get("create").getInputParameters().get("DOC_ROOT");
+        FunctionPropertyValue functionValue = (FunctionPropertyValue) value;
+        assertEquals(functionValue.getFunction(), "get_property");
+        assertEquals(functionValue.getParameters().get(0), "SELF");
+        assertEquals(functionValue.getParameters().get(1), "floatingip");
+
+        // check the function of get_property on capability
+        IValue capabilityValue = context.getPaaSTopology().getNonNatives().get(0).getInterfaces().get("tosca.interfaces.node.lifecycle.Standard").getOperations().get("create").getInputParameters().get("GET_PROPERTY_CAPABILITY");
+        FunctionPropertyValue capabilityFunctionValue = (FunctionPropertyValue) capabilityValue;
+        assertEquals(capabilityFunctionValue.getFunction(), "get_property");
+        assertEquals(capabilityFunctionValue.getParameters().get(0), "SELF");
+        assertEquals(capabilityFunctionValue.getParameters().get(1), "host");
+        assertEquals(capabilityFunctionValue.getParameters().get(2), "floatingip_capability");
+
+        propertyEvaluatorService.processGetPropertyFunction(context);
+
+        // check the value of get_property on property
+        value =  context.getPaaSTopology().getNonNatives().get(0).getInterfaces().get("tosca.interfaces.node.lifecycle.Standard").getOperations().get("create").getInputParameters().get("DOC_ROOT");
+        ScalarPropertyValue scalarValue = (ScalarPropertyValue) value;
+        assertEquals(scalarValue.getValue(), "{\n  \"floating_network_name\" : \"test\"\n}");
+
+        // check the value of get_property on capability
+        capabilityValue = context.getPaaSTopology().getNonNatives().get(0).getInterfaces().get("tosca.interfaces.node.lifecycle.Standard").getOperations().get("create").getInputParameters().get("GET_PROPERTY_CAPABILITY");
+        ScalarPropertyValue capabilityScalarValue = (ScalarPropertyValue) capabilityValue;
+        assertEquals(capabilityScalarValue.getValue(), "{\n  \"floating_network_name\" : \"test2\"\n}");
     }
 }

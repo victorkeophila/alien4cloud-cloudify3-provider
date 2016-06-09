@@ -28,6 +28,8 @@ topology_template:
     Apache:
       type: alien.nodes.Apache
       properties:
+        floatingip:
+          floating_network_name: test
         version: 2.4
         port: 80
         document_root: /var/www
@@ -37,10 +39,6 @@ topology_template:
             capability: tosca.capabilities.Container
             relationship: tosca.relationships.HostedOn
       capabilities:
-        host:
-          properties:
-            floatingip:
-              floating_network_name: plop
         data_endpoint:
           properties:
             protocol: tcp
@@ -53,4 +51,8 @@ topology_template:
             initiator: source
             network_name: PRIVATE
             secure: true
+        host:
+          properties:
+            floatingip_capability:
+              floating_network_name: test2
 

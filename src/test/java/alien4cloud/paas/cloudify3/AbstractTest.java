@@ -42,6 +42,8 @@ public class AbstractTest {
 
     public static final String ARTIFACT_TEST_TOPOLOGY = "artifact_test";
 
+    public static final String CUSTOM_APACHE_TOPOLOGY = "compute_apache_prop_complex";
+
     public static final String VERSION;
 
     @Value("${cloudify3.externalNetworkName}")

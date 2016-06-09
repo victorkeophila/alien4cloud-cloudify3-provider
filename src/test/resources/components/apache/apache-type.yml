@@ -53,6 +53,7 @@ node_types:
           inputs:
             PORT: { get_property: [SELF, port] }
             DOC_ROOT: { get_property: [SELF, floatingip] }
+            GET_PROPERTY_CAPABILITY: { get_property: [SELF, host, floatingip_capability] }
           implementation: scripts/install_apache.sh
         start: scripts/start_apache.sh
 
@@ -60,7 +61,7 @@ capability_types:
   alien.capabilities.ApacheContainer:
       derived_from: tosca.capabilities.Container
       properties:
-        floatingip:
+        floatingip_capability:
           type: alien.data.FloatingIpConfig
           required: false
 

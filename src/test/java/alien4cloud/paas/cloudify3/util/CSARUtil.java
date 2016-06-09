@@ -121,11 +121,12 @@ public class CSARUtil {
         uploadNormativeTypes();
         uploadStorage();
         uploadTomcat();
-        uploadCustomApache();
+        uploadApacheTypes();
         uploadMySqlTypes();
         uploadPHPTypes();
         uploadWordpress();
         uploadArtifactTest();
         uploadCustomFS();
+        uploadCustomApache();
     }
 }
