@@ -25,6 +25,9 @@ node_types:
       that can be managed and run by a TOSCA Compute Node Type.
     capabilities:
       host: alien.capabilities.ApacheContainer
+    requirements:
+      - host: alien.capabilities.ApacheContainer
+        type: alien.relationships.AlienTest
     attributes:
       apache_url: { concat: ["http://", get_attribute: [HOST, public_ip_address], ":", get_property: [SELF, port], "/"] }
     tags:
@@ -65,3 +68,17 @@ capability_types:
           type: alien.data.FloatingIpConfig
           required: false
 
+relationship_types:
+  alien.relationships.AlienTest:
+    derived_from: tosca.relationships.HostedOn
+    valid_target_types: [ tosca.capabilities.Container ]
+    properties:
+        floatingip_relationship:
+          type: alien.data.FloatingIpConfig
+          required: false
+    interfaces:
+      Configure:
+        pre_configure_source:
+          inputs:
+            GET_PROPERTY_RELATIONSHIP: { get_property: [SELF, floatingip_relationship] }
+          implementation: scripts/install_apache.sh

@@ -9,7 +9,6 @@ imports:
   - apache-type:3.0.0-SNAPSHOT
 
 topology_template:
-  description: 
   node_templates:
     Compute:
       type: tosca.nodes.Compute
@@ -37,7 +36,10 @@ topology_template:
         - host:
             node: Compute
             capability: tosca.capabilities.Container
-            relationship: tosca.relationships.HostedOn
+            relationship: alien.relationships.AlienTest
+            properties:
+              floatingip_relationship:
+                floating_network_name: test3
       capabilities:
         data_endpoint:
           properties:
@@ -55,4 +57,3 @@ topology_template:
           properties:
             floatingip_capability:
               floating_network_name: test2
-

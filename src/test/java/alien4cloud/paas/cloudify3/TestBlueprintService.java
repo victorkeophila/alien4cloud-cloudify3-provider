@@ -232,6 +232,13 @@ public class TestBlueprintService extends AbstractTest {
         assertEquals(capabilityFunctionValue.getParameters().get(1), "host");
         assertEquals(capabilityFunctionValue.getParameters().get(2), "floatingip_capability");
 
+        // check the function of get_property on relationship
+        IValue relationshipValue =  context.getPaaSTopology().getNonNatives().get(0).getRelationshipTemplates().get(0).getInterfaces().get("tosca.interfaces.relationship.Configure").getOperations().get("pre_configure_source").getInputParameters().get("GET_PROPERTY_RELATIONSHIP");
+        FunctionPropertyValue relationshipFunctionValue = (FunctionPropertyValue) relationshipValue;
+        assertEquals(relationshipFunctionValue.getFunction(), "get_property");
+        assertEquals(relationshipFunctionValue.getParameters().get(0), "SELF");
+        assertEquals(relationshipFunctionValue.getParameters().get(1), "floatingip_relationship");
+
         propertyEvaluatorService.processGetPropertyFunction(context);
 
         // check the value of get_property on property
@@ -243,5 +250,10 @@ public class TestBlueprintService extends AbstractTest {
         capabilityValue = context.getPaaSTopology().getNonNatives().get(0).getInterfaces().get("tosca.interfaces.node.lifecycle.Standard").getOperations().get("create").getInputParameters().get("GET_PROPERTY_CAPABILITY");
         ScalarPropertyValue capabilityScalarValue = (ScalarPropertyValue) capabilityValue;
         assertEquals(capabilityScalarValue.getValue(), "{\n  \"floating_network_name\" : \"test2\"\n}");
+
+        // check the value of get_property on relationship
+        relationshipValue = context.getPaaSTopology().getNonNatives().get(0).getRelationshipTemplates().get(0).getInterfaces().get("tosca.interfaces.relationship.Configure").getOperations().get("pre_configure_source").getInputParameters().get("GET_PROPERTY_RELATIONSHIP");
+        ScalarPropertyValue relationshipScalarValue = (ScalarPropertyValue) relationshipValue;
+        assertEquals(relationshipScalarValue.getValue(), "{\n  \"floating_network_name\" : \"test3\"\n}");
     }
 }
