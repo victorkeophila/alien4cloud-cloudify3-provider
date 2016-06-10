@@ -322,4 +322,5 @@ for k,v in parsed_output['outputs'].items():
     ctx.instance.runtime_properties['_a4c_OO:tosca.interfaces.node.lifecycle.Standard:create:{0}'.format(k)] = v
 
 
+ctx.instance.runtime_properties['apache_url'] = r'http://' + get_attribute(ctx, 'public_ip_address') + r':' + r'80' + r'/'
 ctx.instance.update()

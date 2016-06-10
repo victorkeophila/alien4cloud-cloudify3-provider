@@ -1,12 +1,15 @@
 package alien4cloud.paas.cloudify3.blueprint;
 
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.collect.Maps;
+
 import alien4cloud.model.common.Tag;
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.FunctionPropertyValue;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.PropertyValue;
-import alien4cloud.model.components.ScalarPropertyValue;
+import alien4cloud.model.components.*;
 import alien4cloud.paas.cloudify3.configuration.MappingConfiguration;
 import alien4cloud.paas.cloudify3.error.BadConfigurationException;
 import alien4cloud.paas.cloudify3.service.PropertyEvaluatorService;
@@ -16,11 +19,6 @@ import alien4cloud.paas.cloudify3.util.mapping.PropertiesMappingUtil;
 import alien4cloud.paas.cloudify3.util.mapping.PropertyValueUtil;
 import alien4cloud.paas.exception.NotSupportedException;
 import alien4cloud.utils.TagUtil;
-import com.google.common.collect.Maps;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
 
@@ -33,13 +31,13 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
 
     public String formatTextValue(int indentLevel, String text) {
         if (text != null && text.contains("\n")) {
+            indentLevel++;
             StringBuilder indentationBuffer = new StringBuilder();
             for (int i = 0; i < indentLevel; i++) {
                 indentationBuffer.append("  ");
             }
             String indentation = indentationBuffer.toString();
             StringBuilder formattedTextBuffer = new StringBuilder("|\n");
-            indentation += "  ";
             String[] lines = text.split("\n");
             for (String line : lines) {
                 formattedTextBuffer.append(indentation).append(line).append("\n");
@@ -106,12 +104,20 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
         return buffer.toString();
     }
 
+    public Map<String, AbstractPropertyValue> addPropertyValueIfMissing(Map<String, AbstractPropertyValue> properties, String key, String value) {
+        Map<String, AbstractPropertyValue> copy = new HashMap<>(properties);
+        if (!copy.containsKey(key) || copy.get(key) == null) {
+            copy.put(key, new ScalarPropertyValue(value));
+        }
+        return copy;
+    }
+
     public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties) {
         StringBuilder buffer = new StringBuilder();
         for (Map.Entry<String, AbstractPropertyValue> propertyEntry : properties.entrySet()) {
             if (propertyEntry.getValue() != null) {
                 buffer.append("\n").append(indent(indentLevel)).append(propertyEntry.getKey()).append(": ")
-                        .append(formatPropertyValue(indentLevel + 1, propertyEntry.getValue()));
+                        .append(formatPropertyValue(indentLevel, propertyEntry.getValue()));
             }
         }
         return buffer.toString();
@@ -156,8 +162,8 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     }
 
     private String formatValue(boolean appendLf, int indentLevel, Object value) {
-        if (value instanceof String) {
-            return formatTextValue(indentLevel, (String) value);
+        if (isPrimitiveType(value)) {
+            return formatTextValue(indentLevel, String.valueOf(value));
         } else if (value instanceof Map) {
             return formatMapValue(appendLf, indentLevel, (Map<String, Object>) value);
         } else if (value instanceof Object[]) {
@@ -171,7 +177,12 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
         }
     }
 
+    private boolean isPrimitiveType(Object value) {
+        return value instanceof String || value instanceof Number || value instanceof Boolean;
+    }
+
     private String formatMapValue(boolean appendFirstLf, int indentLevel, Map<String, Object> value) {
+        indentLevel++;
         StringBuilder buffer = new StringBuilder();
         boolean isFirst = true;
         for (Map.Entry<String, Object> valueEntry : value.entrySet()) {
@@ -179,7 +190,7 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
                 if (!isFirst || appendFirstLf) {
                     buffer.append("\n").append(indent(indentLevel));
                 }
-                buffer.append(valueEntry.getKey()).append(": ").append(formatValue(indentLevel + 1, valueEntry.getValue()));
+                buffer.append(valueEntry.getKey()).append(": ").append(formatValue(indentLevel, valueEntry.getValue()));
                 if (isFirst) {
                     isFirst = false;
                 }
@@ -189,10 +200,11 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     }
 
     private String formatListValue(int indentLevel, List<Object> value) {
+        indentLevel++;
         StringBuilder buffer = new StringBuilder();
         for (Object element : value) {
             if (element != null) {
-                buffer.append("\n").append(indent(indentLevel)).append("- ").append(formatValue(false, indentLevel + 1, element));
+                buffer.append("\n").append(indent(indentLevel)).append("- ").append(formatValue(false, indentLevel, element));
             }
         }
         return buffer.toString();
