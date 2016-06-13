@@ -5,8 +5,6 @@ import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.FunctionPropertyValue;
 import alien4cloud.model.components.IValue;
 import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.PropertyValue;
-import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.paas.cloudify3.configuration.MappingConfiguration;
 import alien4cloud.paas.cloudify3.error.BadConfigurationException;
 import alien4cloud.paas.cloudify3.service.PropertyEvaluatorService;
@@ -14,11 +12,10 @@ import alien4cloud.paas.cloudify3.service.model.CloudifyDeployment;
 import alien4cloud.paas.cloudify3.util.mapping.IPropertyMapping;
 import alien4cloud.paas.cloudify3.util.mapping.PropertiesMappingUtil;
 import alien4cloud.paas.cloudify3.util.mapping.PropertyValueUtil;
-import alien4cloud.paas.exception.NotSupportedException;
+import alien4cloud.tosca.serializer.ToscaPropertySerializerUtils;
 import alien4cloud.utils.TagUtil;
 import com.google.common.collect.Maps;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -29,53 +26,6 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
     public NativeTypeGenerationUtil(MappingConfiguration mappingConfiguration, CloudifyDeployment alienDeployment, Path recipePath,
             PropertyEvaluatorService propertyEvaluatorService) {
         super(mappingConfiguration, alienDeployment, recipePath, propertyEvaluatorService);
-    }
-
-    public String formatTextValue(int indentLevel, String text) {
-        if (text != null && text.contains("\n")) {
-            StringBuilder indentationBuffer = new StringBuilder();
-            for (int i = 0; i < indentLevel; i++) {
-                indentationBuffer.append("  ");
-            }
-            String indentation = indentationBuffer.toString();
-            StringBuilder formattedTextBuffer = new StringBuilder("|\n");
-            indentation += "  ";
-            String[] lines = text.split("\n");
-            for (String line : lines) {
-                formattedTextBuffer.append(indentation).append(line).append("\n");
-            }
-            return formattedTextBuffer.toString();
-        } else {
-            return text == null ? "" : text;
-        }
-    }
-
-    /**
-     * Check if a property has been defined with a non null and not empty value.
-     *
-     * @param properties
-     *            The map of properties in which to look.
-     * @param property
-     *            The name of the property.
-     * @return True if a value has been defined, false if not.
-     */
-    public boolean hasPropertyValue(Map<String, AbstractPropertyValue> properties, String property) {
-        if (properties == null) {
-            return false;
-        }
-        AbstractPropertyValue propertyValue = properties.get(property);
-        if (propertyValue == null) {
-            return false;
-        }
-        if (propertyValue instanceof ScalarPropertyValue) {
-            String value = ((ScalarPropertyValue) propertyValue).getValue();
-            if (value == null || value.isEmpty()) {
-                return false;
-            }
-            // there is a non-null and not empty property value.
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -94,29 +44,6 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
         return cloudifyType;
     }
 
-    public String getNativePropertyValue(IndexedNodeType toscaNodeType, String property) {
-        return toscaNodeType.getProperties().get(property).getDefault();
-    }
-
-    public String indent(int indentLevel) {
-        StringBuilder buffer = new StringBuilder();
-        for (int i = 0; i < indentLevel; i++) {
-            buffer.append("  ");
-        }
-        return buffer.toString();
-    }
-
-    public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties) {
-        StringBuilder buffer = new StringBuilder();
-        for (Map.Entry<String, AbstractPropertyValue> propertyEntry : properties.entrySet()) {
-            if (propertyEntry.getValue() != null) {
-                buffer.append("\n").append(indent(indentLevel)).append(propertyEntry.getKey()).append(": ")
-                        .append(formatPropertyValue(indentLevel + 1, propertyEntry.getValue()));
-            }
-        }
-        return buffer.toString();
-    }
-
     /**
      * Apply properties mapping and then format properties for cloudify blueprint.
      *
@@ -130,72 +57,13 @@ public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
      */
     public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties, Map<String, List<IPropertyMapping>> propMappings) {
         Map<String, AbstractPropertyValue> mappedProperties = PropertyValueUtil.mapProperties(propMappings, properties);
-        return formatProperties(indentLevel, mappedProperties);
+        return ToscaPropertySerializerUtils.formatProperties(indentLevel, mappedProperties);
     }
 
     public String formatProperties(int indentLevel, Map<String, AbstractPropertyValue> properties,
             Map<String, Map<String, List<IPropertyMapping>>> propertyMappings, String nodeType) {
         Map<String, AbstractPropertyValue> mappedProperties = PropertyValueUtil.mapProperties(propertyMappings, nodeType, properties);
-        return formatProperties(indentLevel, mappedProperties);
-    }
-
-    private String formatPropertyValue(int indentLevel, AbstractPropertyValue propertyValue) {
-        return formatPropertyValue(true, indentLevel, propertyValue);
-    }
-
-    private String formatPropertyValue(boolean appendLf, int indentLevel, AbstractPropertyValue propertyValue) {
-        if (propertyValue instanceof PropertyValue) {
-            return formatValue(appendLf, indentLevel, ((PropertyValue) propertyValue).getValue());
-        } else {
-            throw new NotSupportedException("Do not support other types than PropertyValue");
-        }
-    }
-
-    private String formatValue(int indentLevel, Object value) {
-        return formatValue(true, indentLevel, value);
-    }
-
-    private String formatValue(boolean appendLf, int indentLevel, Object value) {
-        if (value instanceof String) {
-            return formatTextValue(indentLevel, (String) value);
-        } else if (value instanceof Map) {
-            return formatMapValue(appendLf, indentLevel, (Map<String, Object>) value);
-        } else if (value instanceof Object[]) {
-            return formatListValue(indentLevel, Arrays.asList((Object[]) value));
-        } else if (value instanceof List) {
-            return formatListValue(indentLevel, (List<Object>) value);
-        } else if (value instanceof PropertyValue) {
-            return formatPropertyValue(appendLf, indentLevel, (PropertyValue) value);
-        } else {
-            throw new NotSupportedException("Do not support other types than string map and list");
-        }
-    }
-
-    private String formatMapValue(boolean appendFirstLf, int indentLevel, Map<String, Object> value) {
-        StringBuilder buffer = new StringBuilder();
-        boolean isFirst = true;
-        for (Map.Entry<String, Object> valueEntry : value.entrySet()) {
-            if (valueEntry.getValue() != null) {
-                if (!isFirst || appendFirstLf) {
-                    buffer.append("\n").append(indent(indentLevel));
-                }
-                buffer.append(valueEntry.getKey()).append(": ").append(formatValue(indentLevel + 1, valueEntry.getValue()));
-                if (isFirst) {
-                    isFirst = false;
-                }
-            }
-        }
-        return buffer.toString();
-    }
-
-    private String formatListValue(int indentLevel, List<Object> value) {
-        StringBuilder buffer = new StringBuilder();
-        for (Object element : value) {
-            if (element != null) {
-                buffer.append("\n").append(indent(indentLevel)).append("- ").append(formatValue(false, indentLevel + 1, element));
-            }
-        }
-        return buffer.toString();
+        return ToscaPropertySerializerUtils.formatProperties(indentLevel, mappedProperties);
     }
 
     public Map<String, List<IPropertyMapping>> loadPropertyMapping(IndexedNodeType type, String tagName) {

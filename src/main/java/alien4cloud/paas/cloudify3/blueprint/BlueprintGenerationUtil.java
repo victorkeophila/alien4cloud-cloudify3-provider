@@ -2,6 +2,7 @@ package alien4cloud.paas.cloudify3.blueprint;
 
 import java.nio.file.Path;
 
+import alien4cloud.tosca.serializer.ToscaPropertySerializerUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import alien4cloud.paas.cloudify3.configuration.MappingConfiguration;
@@ -30,6 +31,8 @@ public class BlueprintGenerationUtil extends AbstractGenerationUtil {
 
     private NetworkGenerationUtil network;
 
+    private ToscaPropertySerializerUtils property;
+
     public BlueprintGenerationUtil(MappingConfiguration mappingConfiguration, CloudifyDeployment alienDeployment, Path recipePath,
             PropertyEvaluatorService propertyEvaluatorService, OrchestratorDeploymentPropertiesService deploymentPropertiesService) {
         super(mappingConfiguration, alienDeployment, recipePath, propertyEvaluatorService);
@@ -39,5 +42,6 @@ public class BlueprintGenerationUtil extends AbstractGenerationUtil {
         this.common = new CommonGenerationUtil(mappingConfiguration, alienDeployment, recipePath, propertyEvaluatorService, deploymentPropertiesService);
         this.network = new NetworkGenerationUtil(mappingConfiguration, alienDeployment, recipePath, propertyEvaluatorService);
         this.natives = new NativeTypeGenerationUtil(mappingConfiguration, alienDeployment, recipePath, propertyEvaluatorService);
+        this.property = new ToscaPropertySerializerUtils();
     }
 }

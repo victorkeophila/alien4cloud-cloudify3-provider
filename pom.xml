@@ -63,8 +63,13 @@
 					<groupId>ch.qos.logback</groupId>
 				</exclusion>
 			</exclusions>
+		</dependency>	
+	        <dependency>
+			<groupId>alien4cloud</groupId>
+			<artifactId>alien4cloud-tosca</artifactId>
+			<version>${alien4cloud.version}</version>
 		</dependency>
-		<!-- others -->
+	        <!-- others -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
