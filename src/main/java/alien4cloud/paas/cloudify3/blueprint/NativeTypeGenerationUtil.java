@@ -1,5 +1,9 @@
 package alien4cloud.paas.cloudify3.blueprint;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
 import alien4cloud.model.common.Tag;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.FunctionPropertyValue;
@@ -14,10 +18,8 @@ import alien4cloud.paas.cloudify3.util.mapping.PropertiesMappingUtil;
 import alien4cloud.paas.cloudify3.util.mapping.PropertyValueUtil;
 import alien4cloud.tosca.serializer.ToscaPropertySerializerUtils;
 import alien4cloud.utils.TagUtil;
+
 import com.google.common.collect.Maps;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
 
 public class NativeTypeGenerationUtil extends AbstractGenerationUtil {
 

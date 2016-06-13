@@ -1,19 +1,23 @@
 package alien4cloud.paas.cloudify3;
 
+import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
+import alien4cloud.paas.cloudify3.location.AmazonLocationConfigurator;
+import alien4cloud.paas.cloudify3.location.ByonLocationConfigurator;
+import alien4cloud.paas.cloudify3.location.OpenstackLocationConfigurator;
+import alien4cloud.paas.cloudify3.model.DeploymentPropertiesNames;
+import alien4cloud.paas.cloudify3.util.DeploymentLauncher;
+import com.google.common.collect.Maps;
 import java.util.Map;
-
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-
+import javax.inject.Inject;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import com.google.common.collect.Maps;
-
-import alien4cloud.paas.cloudify3.model.DeploymentPropertiesNames;
-import alien4cloud.paas.cloudify3.util.DeploymentLauncher;
-import lombok.extern.slf4j.Slf4j;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:test-context.xml")
@@ -24,22 +28,34 @@ import lombok.extern.slf4j.Slf4j;
  */
 public class TestDeploymentService extends AbstractTest {
 
+    @Inject
+    private AmazonLocationConfigurator amazonLocationConfigurator;
+
     @Resource
     private DeploymentLauncher deploymentLauncher;
+
+    @Getter
+    private Map<String, ILocationConfiguratorPlugin> locationsConfigurators = Maps.newHashMap();
+
+    @PostConstruct
+    public void postConstruct() {
+        LOCATIONS.add("amazon");
+        locationsConfigurators.put("amazon", amazonLocationConfigurator);
+    }
 
     @org.junit.Test
     public void deploySingleCompute() throws Exception {
         deploymentLauncher.launch(SINGLE_COMPUTE_TOPOLOGY);
     }
 
-    @org.junit.Test
+    @Test
     public void deployLamp() throws Exception {
         Map<String, String> deploymentProps = Maps.newHashMap();
         deploymentProps.put(DeploymentPropertiesNames.AUTO_HEAL, "true");
         deploymentLauncher.launch(LAMP_TOPOLOGY, deploymentProps);
     }
 
-    @org.junit.Test
+    @Test
     public void deployBlockStorage() throws Exception {
         deploymentLauncher.launch(STORAGE_TOPOLOGY);
     }
@@ -66,4 +82,5 @@ public class TestDeploymentService extends AbstractTest {
     public void deployArtifactTest() throws Exception {
         deploymentLauncher.launch(ARTIFACT_TEST_TOPOLOGY);
     }
+
 }

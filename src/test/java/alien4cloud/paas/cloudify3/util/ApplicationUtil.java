@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("cfy3-applicationUtil")
 @Slf4j
 public class ApplicationUtil {
 
