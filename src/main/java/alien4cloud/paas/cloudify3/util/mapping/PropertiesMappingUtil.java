@@ -1,18 +1,5 @@
 package alien4cloud.paas.cloudify3.util.mapping;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.commons.collections4.MapUtils;
-import org.springframework.stereotype.Component;
-
 import alien4cloud.model.components.IndexedInheritableToscaElement;
 import alien4cloud.model.components.IndexedNodeType;
 import alien4cloud.model.components.IndexedToscaElement;
@@ -20,10 +7,19 @@ import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.paas.wf.WorkflowsBuilderService.TopologyContext;
 import alien4cloud.tosca.normative.ToscaType;
 import alien4cloud.utils.TagUtil;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
+import org.springframework.stereotype.Component;
 
 /**
  * Perform mapping of properties
@@ -107,12 +103,21 @@ public class PropertiesMappingUtil {
                             typeMappings = Maps.newLinkedHashMap();
                             propertyMappingsByTypes.put(inheritableToscaElement.getElementId(), typeMappings);
                         }
+                        // Do not override the existing mapping, copy it in the complex mapping instead
+                        completeMappingMarker(mapping, definitionEntry.getKey(), typeMappings);
                         ArrayList<IPropertyMapping> mappingList = new ArrayList<IPropertyMapping>();
                         mappingList.add(mapping);
+
                         typeMappings.put(definitionEntry.getKey(), mappingList);
                     }
                 }
             }
+        }
+    }
+
+    private static void completeMappingMarker(ComplexPropertyMapping mapping, String key, Map<String, List<IPropertyMapping>> typeMappings) {
+        if (typeMappings.get(key) != null) {
+            mapping.setRelatedSimplePropertiesMapping(typeMappings.get(key));
         }
     }
 
@@ -158,8 +163,7 @@ public class PropertiesMappingUtil {
                 List<Object> mappingList;
                 if (parsedMapping.getValue() instanceof List) {
                     mappingList = (List<Object>) parsedMapping.getValue();
-                }
-                else { // a "single mapping" is a "list of one mapping"
+                } else { // a "single mapping" is a "list of one mapping"
                     mappingList = new ArrayList<Object>(Arrays.asList(parsedMapping.getValue()));
                 }
 
@@ -173,8 +177,7 @@ public class PropertiesMappingUtil {
                     String mappingString;
                     if (mappingItem instanceof String) {
                         mappingString = (String) mappingItem;
-                    }
-                    else {
+                    } else {
 
                         Map<String, String> complexMapping = (Map<String, String>) mappingItem;
                         mappingString = complexMapping.get("path");

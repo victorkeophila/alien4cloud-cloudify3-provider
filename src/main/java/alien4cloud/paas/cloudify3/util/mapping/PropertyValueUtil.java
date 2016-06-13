@@ -1,12 +1,5 @@
 package alien4cloud.paas.cloudify3.util.mapping;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import lombok.extern.slf4j.Slf4j;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ComplexPropertyValue;
 import alien4cloud.model.components.ListPropertyValue;
@@ -14,14 +7,20 @@ import alien4cloud.model.components.PropertyValue;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.paas.cloudify3.error.PropertyValueMappingException;
 import alien4cloud.utils.services.PropertyValueService;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Simple utility that deep
  */
 @Slf4j
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public final class PropertyValueUtil {
 
     /**
@@ -35,8 +34,7 @@ public final class PropertyValueUtil {
      *            The properties to map
      * @return A map of mapped properties
      */
-    public static Map<String, AbstractPropertyValue> mapProperties(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings,
-            String nodeType,
+    public static Map<String, AbstractPropertyValue> mapProperties(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings, String nodeType,
             Map<String, AbstractPropertyValue> properties) {
 
         if (allTypesPropertiesMappings == null || allTypesPropertiesMappings.isEmpty()) {
@@ -93,6 +91,15 @@ public final class PropertyValueUtil {
         return mappedProperties;
     }
 
+    /**
+     * Check the type of the mapping and process it
+     * 
+     * @param allTypesPropertiesMappings
+     * @param typesPropertiesMappings
+     * @param propertyName
+     * @param sourcePropertyValue
+     * @param mappedProperties
+     */
     private static void mapProperty(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings,
             Map<String, List<IPropertyMapping>> typesPropertiesMappings, String propertyName, PropertyValue sourcePropertyValue,
             Map<String, AbstractPropertyValue> mappedProperties) {
@@ -109,12 +116,20 @@ public final class PropertyValueUtil {
                     processComplexPropertyMapping(allTypesPropertiesMappings, propertyName, sourcePropertyValue, mappedProperties, mapping);
                 }
             }
-        }
-        else {
+        } else {
             mergeAndAddMappedProperty(propertyName, sourcePropertyValue, mappedProperties);
         }
     }
 
+    /**
+     * process a {@link ComplexPropertyMapping}. This is a mapping referring to a data type linked to a complex property (entry_schema)
+     * 
+     * @param allTypesPropertiesMappings
+     * @param propertyName
+     * @param sourcePropertyValue
+     * @param mappedProperties
+     * @param mapping
+     */
     private static void processComplexPropertyMapping(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings, String propertyName,
             PropertyValue sourcePropertyValue, Map<String, AbstractPropertyValue> mappedProperties, IPropertyMapping mapping) {
         ComplexPropertyMapping complexPropertyMapping = (ComplexPropertyMapping) mapping;
@@ -131,6 +146,9 @@ public final class PropertyValueUtil {
                     propertyName, complexPropertyType));
             return;
         }
+        PropertyValue mappingResult = null;
+
+        // check and process according to the type of the mapping
         if (complexPropertyMapping.isList()) {
             // the mapping concerns a list
             if (!(sourcePropertyValue instanceof ListPropertyValue)) {
@@ -138,44 +156,90 @@ public final class PropertyValueUtil {
                 log.warn(String.format("The property '%s' should be a list but is not, ignore the mapping !", propertyName));
                 return;
             }
-            ListPropertyValue listPropertyValue = (ListPropertyValue) sourcePropertyValue;
-            ListPropertyValue targetListPropertyValue = new ListPropertyValue(new ArrayList<Object>());
-            for (Object listItem : listPropertyValue.getValue()) {
-                if (!(listItem instanceof ComplexPropertyValue)) {
-                    // the item is not a complex property, ignore and log
-                    log.warn(String.format("The property '%s' list item should be a complex property but is not, ignore the mapping !", propertyName));
-                    continue;
-                }
-                ComplexPropertyValue complexPropertyValue = (ComplexPropertyValue) listItem;
-                // for each item we build a map
-                Map<String, AbstractPropertyValue> itemProperties = Maps.newLinkedHashMap();
-                for (Entry<String, Object> complexPropertyEntry : complexPropertyValue.getValue().entrySet()) {
-                    PropertyValue complexPropertyEntryValue = propertyValueFromObject(complexPropertyEntry.getValue());
-                    String complexPropertyEntryName = complexPropertyEntry.getKey();
-                    mapProperty(allTypesPropertiesMappings, typeMapping, complexPropertyEntryName, complexPropertyEntryValue, itemProperties);
-                }
-                targetListPropertyValue.getValue().add(itemProperties);
-            }
-            // TODO: add the ability to change to taget property name ?
-            mappedProperties.put(propertyName, targetListPropertyValue);
+            mappingResult = processListPropertyMapping(allTypesPropertiesMappings, propertyName, sourcePropertyValue, typeMapping);
         } else {
-            // this a mapped complex type but not a list
+            // the mapping concerns a complex type other than a list (let's say a map)
             if (!(sourcePropertyValue instanceof ComplexPropertyValue)) {
                 // the item is not a complex property, ignore and log
                 log.warn(String.format("The property '%s' should be a complex property but is not, ignore the mapping !", propertyName));
                 return;
             }
-            ComplexPropertyValue complexPropertyValue = (ComplexPropertyValue) sourcePropertyValue;
+            mappingResult = processMapPropertyMapping(allTypesPropertiesMappings, sourcePropertyValue, typeMapping);
+        }
+
+        // then, we process the simple mapping registered for this property
+        // this allows for example to change the property name on the target
+        if (complexPropertyMapping.getRelatedSimplePropertiesMapping() != null) {
+            for (IPropertyMapping propertyMapping : complexPropertyMapping.getRelatedSimplePropertiesMapping()) {
+                processPropertyMapping(allTypesPropertiesMappings, (PropertyMapping) propertyMapping, propertyName, mappingResult, mappedProperties);
+            }
+        } else {
+            // if the property is not mapped, just keep it as is.
+            mergeAndAddMappedProperty(propertyName, mappingResult, mappedProperties);
+        }
+    }
+
+    /**
+     * process the case the source property value is a complex type (a map)
+     * 
+     * @param allTypesPropertiesMappings
+     * @param sourcePropertyValue
+     * @param typeMapping
+     * @return
+     */
+    private static PropertyValue processMapPropertyMapping(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings,
+            PropertyValue sourcePropertyValue, Map<String, List<IPropertyMapping>> typeMapping) {
+        ComplexPropertyValue complexPropertyValue = (ComplexPropertyValue) sourcePropertyValue;
+        Map<String, AbstractPropertyValue> itemProperties = Maps.newLinkedHashMap();
+        for (Entry<String, Object> complexPropertyEntry : complexPropertyValue.getValue().entrySet()) {
+            PropertyValue complexPropertyEntryValue = propertyValueFromObject(complexPropertyEntry.getValue());
+            String complexPropertyEntryName = complexPropertyEntry.getKey();
+            mapProperty(allTypesPropertiesMappings, typeMapping, complexPropertyEntryName, complexPropertyEntryValue, itemProperties);
+        }
+        return propertyValueFromObject(itemProperties);
+    }
+
+    /**
+     * Process the case the source property value is a list
+     * 
+     * @param allTypesPropertiesMappings
+     * @param propertyName
+     * @param sourcePropertyValue
+     * @param typeMapping
+     * @return
+     */
+    private static PropertyValue processListPropertyMapping(Map<String, Map<String, List<IPropertyMapping>>> allTypesPropertiesMappings, String propertyName,
+            PropertyValue sourcePropertyValue, Map<String, List<IPropertyMapping>> typeMapping) {
+        ListPropertyValue listPropertyValue = (ListPropertyValue) sourcePropertyValue;
+        ListPropertyValue targetListPropertyValue = new ListPropertyValue(new ArrayList<Object>());
+        for (Object listItem : listPropertyValue.getValue()) {
+            if (!(listItem instanceof ComplexPropertyValue)) {
+                // the item is not a complex property, ignore and log
+                log.warn(String.format("The property '%s' list item should be a complex property but is not, ignore the mapping !", propertyName));
+                continue;
+            }
+            ComplexPropertyValue complexPropertyValue = (ComplexPropertyValue) listItem;
+            // for each item we build a map
             Map<String, AbstractPropertyValue> itemProperties = Maps.newLinkedHashMap();
             for (Entry<String, Object> complexPropertyEntry : complexPropertyValue.getValue().entrySet()) {
                 PropertyValue complexPropertyEntryValue = propertyValueFromObject(complexPropertyEntry.getValue());
                 String complexPropertyEntryName = complexPropertyEntry.getKey();
                 mapProperty(allTypesPropertiesMappings, typeMapping, complexPropertyEntryName, complexPropertyEntryValue, itemProperties);
             }
-            mappedProperties.put(propertyName, propertyValueFromObject(itemProperties));
+            targetListPropertyValue.getValue().add(itemProperties);
         }
+        return targetListPropertyValue;
     }
 
+    /**
+     * process the case the source property value is a simple type
+     * 
+     * @param propertyMappings
+     * @param mapping
+     * @param propertyName
+     * @param sourcePropertyValue
+     * @param mappedProperties
+     */
     private static void processPropertyMapping(Map<String, Map<String, List<IPropertyMapping>>> propertyMappings, PropertyMapping mapping, String propertyName,
             PropertyValue sourcePropertyValue, Map<String, AbstractPropertyValue> mappedProperties) {
 
@@ -196,8 +260,8 @@ public final class PropertyValueUtil {
                 // if there is a specified unit, convert the value to the expected unit.
                 if (targetMapping.getUnit() != null) {
                     // need the property type to IComparablePropertyType
-                    sourceValue = PropertyValueService.getValueInUnit(sourceValue, targetMapping.getUnit(), targetMapping.isCeil(), subMapping
-                            .getSourceMapping().getPropertyDefinition());
+                    sourceValue = PropertyValueService.getValueInUnit(sourceValue, targetMapping.getUnit(), targetMapping.isCeil(),
+                            subMapping.getSourceMapping().getPropertyDefinition());
                 }
 
                 if (targetMapping.getPath() == null) {
@@ -215,7 +279,7 @@ public final class PropertyValueUtil {
                         mappedProperties.put(targetMapping.getProperty(), targetProperty);
                     }
                     // set the value
-                    setValue(targetProperty.getValue(), targetMapping.getPath(), targetValue);
+                    setValueInMap(targetProperty.getValue(), targetMapping.getPath(), targetValue);
                 }
             }
         }
@@ -229,80 +293,6 @@ public final class PropertyValueUtil {
         if (mappedProperty != null) {
             mappedProperties.put(propertyName, mappedProperty);
         }
-    }
-
-    /**
-     * Map properties from tosca to cloudify properties.
-     *
-     * @param propMappings
-     *            The property mappings
-     * @param properties
-     *            The properties to map.
-     */
-    @Deprecated
-    public static Map<String, AbstractPropertyValue> _mapProperties(Map<String, PropertyMapping> propMappings, Map<String, AbstractPropertyValue> properties) {
-        if (propMappings == null || propMappings.isEmpty()) {
-            // do not change prop map
-            return properties;
-        }
-
-        Map<String, AbstractPropertyValue> mappedProperties = Maps.newLinkedHashMap();
-
-        for (Map.Entry<String, AbstractPropertyValue> propertyEntry : properties.entrySet()) {
-            PropertyValue sourcePropertyValue = (PropertyValue) propertyEntry.getValue();
-
-            PropertyMapping mapping = propMappings.get(propertyEntry.getKey());
-
-            if (sourcePropertyValue == null) {
-                continue;
-            }
-
-            if (mapping == null || mapping.getSubMappings().size() == 0) {
-                // if the property is not mapped, just keep it as is.
-                // mergeAndAddMappedProperty(propertyEntry.getKey(), sourcePropertyValue, mappedProperties);
-                PropertyValue mappedProperty = merge(sourcePropertyValue, (PropertyValue) mappedProperties.get(propertyEntry.getKey()));
-                mappedProperties.put(propertyEntry.getKey(), mappedProperty);
-            } else {
-                // if the property is mapped then apply the mapping.
-                for (PropertySubMapping subMapping : mapping.getSubMappings()) {
-                    String sourcePath = subMapping.getSourceMapping().getPath();
-                    TargetMapping targetMapping = subMapping.getTargetMapping();
-
-                    if (targetMapping.getProperty() == null) {
-                        continue; // skip this property
-                    }
-
-                    Object sourceValue = PropertyValueService.getValue(sourcePropertyValue.getValue(), sourcePath);
-                    // if there is a specified unit, convert the value to the expected unit.
-                    if (targetMapping.getUnit() != null) {
-                        // need the property type to IComparablePropertyType
-                        sourceValue = PropertyValueService.getValueInUnit(sourceValue, targetMapping.getUnit(), targetMapping.isCeil(), subMapping
-                                .getSourceMapping().getPropertyDefinition());
-                    }
-
-                    PropertyValue targetProperty = (PropertyValue) mappedProperties.get(targetMapping.getProperty());
-                    if (targetMapping.getPath() == null) {
-                        // set the property with the value
-                        PropertyValue mappedProperty = merge(propertyValueFromObject(sourceValue), targetProperty);
-                        mappedProperties.put(targetMapping.getProperty(), mappedProperty);
-                    } else {
-                        // extract the value
-                        Object targetValue = sourceValue;
-                        if (targetProperty != null) {
-                            targetValue = PropertyValueService.getValue(targetProperty.getValue(), targetMapping.getPath());
-                            targetValue = merge(sourceValue, targetValue);
-                        } else {
-                            targetProperty = propertyValueFromObject(new HashMap<>());
-                            mappedProperties.put(targetMapping.getProperty(), targetProperty);
-                        }
-                        // set the value
-                        setValue(targetProperty.getValue(), targetMapping.getPath(), targetValue);
-                    }
-                }
-            }
-        }
-
-        return mappedProperties;
     }
 
     /**
@@ -362,23 +352,30 @@ public final class PropertyValueUtil {
         }
     }
 
-    private static void setValue(Object target, String path, Object value) {
-        String[] pathElements = path.split("\\.");
-        Object current = target;
-        for (int i = 0; i < pathElements.length - 1; i++) {
-            String pathElement = pathElements[i];
-            if (current instanceof Map) {
-                current = ((Map) current).get(pathElement);
+    private static Object getOrInit(Map map, String element) {
+        Object value = map.get(element);
+        if (value == null) {
+            value = new HashMap<>();
+            map.put(element, value);
+        }
+        return value;
+    }
+
+    private static void setValueInMap(Object target, String path, Object value) {
+        if (target instanceof Map) {
+            Map current = (Map) target;
+            String currentPath = path;
+            String[] pathElements = currentPath.split("\\.");
+            if (pathElements.length > 1) {
+                currentPath = currentPath.substring(pathElements[0].length() + 1);
+                Object midwayValue = getOrInit(current, pathElements[0]);
+                setValueInMap(midwayValue, currentPath, value);
             } else {
-                throw new PropertyValueMappingException("Expected a map");
+                current.put(currentPath, value);
             }
+            return;
         }
-        if (current instanceof Map) {
-            // target should be a map
-            ((Map) current).put(pathElements[pathElements.length - 1], value);
-        } else {
-            throw new PropertyValueMappingException("Expected a map");
-        }
+        throw new PropertyValueMappingException("Expected a map");
     }
 
     /**
@@ -423,8 +420,8 @@ public final class PropertyValueUtil {
         } else if (propertyValueObject instanceof String) {
             clone = propertyValueObject;
         } else {
-            log.warn("Property deep clone is just making a simple copy for type {} and value {}. Expecting a String for these situations.", propertyValueObject
-                    .getClass().getName(), propertyValueObject);
+            log.warn("Property deep clone is just making a simple copy for type {} and value {}. Expecting a String for these situations.",
+                    propertyValueObject.getClass().getName(), propertyValueObject);
             clone = propertyValueObject;
         }
 
