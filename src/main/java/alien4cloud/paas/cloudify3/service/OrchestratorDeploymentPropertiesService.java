@@ -7,14 +7,15 @@ import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.common.collect.Maps;
-
 import alien4cloud.model.components.PropertyConstraint;
 import alien4cloud.model.components.PropertyDefinition;
+import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.components.constraints.GreaterThanConstraint;
 import alien4cloud.paas.cloudify3.model.DeploymentPropertiesNames;
 import alien4cloud.tosca.normative.ToscaType;
 import alien4cloud.utils.MapUtil;
+
+import com.google.common.collect.Maps;
 
 public class OrchestratorDeploymentPropertiesService {
 
@@ -29,7 +30,7 @@ public class OrchestratorDeploymentPropertiesService {
         monitoringInterval.setType(ToscaType.INTEGER.toString());
         monitoringInterval.setRequired(false);
         monitoringInterval.setDescription("Interval time in seconds we should check the liveliness of a compute for this deployment. Default is 1min");
-        monitoringInterval.setDefault("1");
+        monitoringInterval.setDefault(new ScalarPropertyValue("1"));
         GreaterThanConstraint intervalConstraint = new GreaterThanConstraint();
         intervalConstraint.setGreaterThan("0");
         monitoringInterval.setConstraints(Arrays.asList((PropertyConstraint) intervalConstraint));
@@ -40,7 +41,7 @@ public class OrchestratorDeploymentPropertiesService {
         autoHeal.setType(ToscaType.BOOLEAN.toString());
         autoHeal.setRequired(false);
         autoHeal.setDescription("Whether to enable or not the auto-heal process on this deployment. Default is disabled.");
-        autoHeal.setDefault("false");
+        autoHeal.setDefault(new ScalarPropertyValue("false"));
         deploymentProperties.put(DeploymentPropertiesNames.AUTO_HEAL, autoHeal);
     }
 
@@ -57,7 +58,7 @@ public class OrchestratorDeploymentPropertiesService {
         if (StringUtils.isBlank(value)) {
             PropertyDefinition definition = deploymentProperties.get(propertyName);
             if (definition != null) {
-                value = definition.getDefault();
+                value = definition.getDefault().getValue().toString();
             }
         }
         return value;
