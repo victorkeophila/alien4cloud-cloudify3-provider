@@ -14,6 +14,7 @@ import javax.annotation.Resource;
 import javax.inject.Inject;
 
 import org.elasticsearch.common.collect.Maps;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.context.ApplicationContext;
@@ -43,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:test-context.xml")
+@Ignore
 public class TestBlueprintService extends AbstractTestBlueprint {
 
     @Inject
