@@ -1,19 +1,5 @@
 package alien4cloud.paas.cloudify3.util;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import javax.annotation.Resource;
-
-import alien4cloud.model.components.CSARSource;
-import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-
 import alien4cloud.git.RepositoryManager;
 import alien4cloud.model.components.Csar;
 import alien4cloud.security.model.Role;
@@ -22,6 +8,16 @@ import alien4cloud.tosca.parser.ParsingError;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.utils.FileUtil;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import javax.annotation.Resource;
+import alien4cloud.model.components.CSARSource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
@@ -103,11 +99,16 @@ public class CSARUtil {
     }
 
     public void uploadArtifactTest() throws Exception {
-        uploadCSAR(Paths.get("./src/test/resources/components/artifact-test"));
+        // find files in classpath so that the code still works in dependend projects
+        uploadCSAR(Paths.get(ClassLoader.getSystemResource("components/artifact-test").toURI()));
     }
 
     public void uploadCustomFS() throws Exception {
-        uploadCSAR(Paths.get("./src/test/resources/components/support-hss"));
+        uploadCSAR(Paths.get(ClassLoader.getSystemResource("components/support-hss").toURI()));
+    }
+
+    public void uploadCustomApache() throws Exception {
+        uploadCSAR(Paths.get("./src/test/resources/components/apache"));
     }
 
     public void uploadAll() throws Exception {
@@ -123,5 +124,6 @@ public class CSARUtil {
         uploadWordpress();
         uploadArtifactTest();
         uploadCustomFS();
+        uploadCustomApache();
     }
 }

@@ -1,0 +1,59 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+description: Alien4Cloud generated service template
+template_name: apache_get_complex
+template_version: 0.1.0-SNAPSHOT
+template_author: admin
+
+imports:
+  - tosca-normative-types:1.0.0-SNAPSHOT
+  - apache-type:3.0.0-SNAPSHOT
+
+topology_template:
+  node_templates:
+    Compute:
+      type: tosca.nodes.Compute
+      capabilities:
+        endpoint:
+          properties:
+            protocol: tcp
+            initiator: source
+            network_name: PRIVATE
+            secure: true
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+    Apache:
+      type: alien.nodes.Apache
+      properties:
+        floatingip:
+          floating_network_name: test
+        version: 2.4
+        port: 80
+        document_root: /var/www
+      requirements:
+        - host:
+            node: Compute
+            capability: tosca.capabilities.Container
+            relationship: alien.relationships.AlienTest
+            properties:
+              floatingip_relationship:
+                floating_network_name: test3
+      capabilities:
+        data_endpoint:
+          properties:
+            protocol: tcp
+            initiator: source
+            network_name: PRIVATE
+            secure: false
+        admin_endpoint:
+          properties:
+            protocol: tcp
+            initiator: source
+            network_name: PRIVATE
+            secure: true
+        host:
+          properties:
+            floatingip_capability:
+              floating_network_name: test2

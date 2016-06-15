@@ -2,6 +2,8 @@ package alien4cloud.paas.cloudify3.blueprint;
 
 import java.nio.file.Path;
 
+import org.apache.commons.lang3.StringUtils;
+
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
@@ -42,4 +44,15 @@ public class CommonGenerationUtil extends AbstractGenerationUtil {
         return "";
     }
 
+    public String truncateString(String toBeAbbreviated, int maxWidth) {
+        if (StringUtils.isEmpty(toBeAbbreviated)) {
+            return toBeAbbreviated;
+        } else {
+            if (toBeAbbreviated.length() > maxWidth) {
+                return toBeAbbreviated.substring(0, maxWidth);
+            } else {
+                return toBeAbbreviated;
+            }
+        }
+    }
 }

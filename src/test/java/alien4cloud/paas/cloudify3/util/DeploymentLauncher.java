@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DeploymentLauncher {
 
-    @Resource
+    @Resource(name = "cfy3-applicationUtil")
     private ApplicationUtil applicationUtil;
 
     @Resource

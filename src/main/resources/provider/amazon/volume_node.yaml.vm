@@ -6,7 +6,7 @@
         create:
           implementation: aws.ec2.ebs.create
 #set( $relationshipTemplates = $util.nonNative.getSourceRelationships($volumeTemplate) )
-#if(!${util.natives.hasPropertyValue($volumeTemplate.nodeTemplate.properties, "zone")})## use compute zone if none is provided
+#if(!${util.property.hasPropertyValue($volumeTemplate.nodeTemplate.properties, "zone")})## use compute zone if none is provided
 #if($util.collectionHasElement($relationshipTemplates))
 #foreach($relationship in $relationshipTemplates)
 #if(${relationship.indexedToscaElement.elementId}=="tosca.relationships.AttachTo")
@@ -22,10 +22,10 @@
         delete: {}
 #end## if
     properties: ${util.natives.formatProperties(3, $volumeTemplate.nodeTemplate.properties, $deployment.propertyMappings.get($volumeTemplate.nodeTemplate.type))}
-#if(${util.natives.hasPropertyValue($volumeTemplate.nodeTemplate.properties, "volume_id")})
+#if(${util.property.hasPropertyValue($volumeTemplate.nodeTemplate.properties, "volume_id")})
       use_external_resource: true
 #end## if
-#if(!${util.natives.hasPropertyValue($volumeTemplate.nodeTemplate.properties, "zone")})## use compute zone if none is provided
+#if(!${util.property.hasPropertyValue($volumeTemplate.nodeTemplate.properties, "zone")})## use compute zone if none is provided
       zone: "failed to retrieve zone please check in amazon"
 #end## if
 #if($util.collectionHasElement($relationshipTemplates))

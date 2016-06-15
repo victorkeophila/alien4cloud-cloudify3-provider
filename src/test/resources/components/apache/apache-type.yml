@@ -1,0 +1,104 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+description: TOSCA simple profile with Apache.
+template_name: apache-type
+template_version: 3.0.0-SNAPSHOT
+template_author: FastConnect
+
+imports:
+  - "tosca-normative-types:1.0.0-SNAPSHOT"
+
+data_types:
+  alien.data.FloatingIpConfig:
+    derived_from: tosca.datatypes.Root
+    properties:
+      floating_ip_address:
+        type: string
+        required: false
+      floating_network_name:
+        type: string
+      test_list:
+        type: list
+        entry_schema:
+          type: alien.data.ComplexObject2
+  alien.data.ComplexObject2:
+    derived_from: tosca.datatypes.Root
+    properties:
+      prop1:
+        type: string
+        required: false
+      prop2:
+        type: string
+        required: false
+node_types:
+  alien.nodes.Apache:
+    derived_from: tosca.nodes.WebServer
+    description: >
+      The TOSCA Apache Node Type represents an apache component
+      that can be managed and run by a TOSCA Compute Node Type.
+    capabilities:
+      host: alien.capabilities.ApacheContainer
+    requirements:
+      - host: alien.capabilities.ApacheContainer
+        type: alien.relationships.AlienTest
+    attributes:
+      apache_url: { concat: ["http://", get_attribute: [HOST, public_ip_address], ":", get_property: [SELF, port], "/"] }
+    tags:
+      icon: /images/apache.png
+    properties:
+      floatingip:
+        type: alien.data.FloatingIpConfig
+        required: false
+      test_complex_list:
+        type: list
+        entry_schema:
+          type: alien.data.ComplexObject2
+      version:
+        type: version
+        default: 2.4
+        constraints:
+          - equal: 2.4
+      port:
+        type: integer
+        description: Port for the Apache server
+        default: 80
+        constraints:
+          - greater_or_equal: 1
+      test:
+        type: list
+        entry_schema:
+          type: string
+      document_root:
+          type: string
+          default: "/var/www"
+    interfaces:
+      Standard:
+        create:
+          inputs:
+            PORT: { get_property: [SELF, port] }
+            DOC_ROOT: { get_property: [SELF, floatingip] }
+            GET_PROPERTY_CAPABILITY: { get_property: [SELF, host, floatingip_capability] }
+          implementation: scripts/install_apache.sh
+        start: scripts/start_apache.sh
+
+capability_types:
+  alien.capabilities.ApacheContainer:
+      derived_from: tosca.capabilities.Container
+      properties:
+        floatingip_capability:
+          type: alien.data.FloatingIpConfig
+          required: false
+
+relationship_types:
+  alien.relationships.AlienTest:
+    derived_from: tosca.relationships.HostedOn
+    valid_target_types: [ tosca.capabilities.Container ]
+    properties:
+        floatingip_relationship:
+          type: alien.data.FloatingIpConfig
+          required: false
+    interfaces:
+      Configure:
+        pre_configure_source:
+          inputs:
+            GET_PROPERTY_RELATIONSHIP: { get_property: [SELF, floatingip_relationship] }
+          implementation: scripts/install_apache.sh

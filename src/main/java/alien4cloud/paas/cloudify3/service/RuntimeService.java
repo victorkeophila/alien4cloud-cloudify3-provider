@@ -37,6 +37,9 @@ public abstract class RuntimeService {
     protected DeploymentClient deploymentClient;
 
     @Resource
+    private StatusService statusService;
+
+    @Resource
     protected ListeningScheduledExecutorService scheduledExecutorService;
 
     private ListenableFuture<Execution> internalWaitForExecutionFinish(final ListenableFuture<Execution> futureExecution) {
