@@ -1,12 +1,12 @@
 package alien4cloud.paas.cloudify3.model;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -18,6 +18,8 @@ public class Event extends AbstractCloudifyModel {
 
     @JsonProperty("@timestamp")
     private String timestamp;
+
+    private String level;
 
     private EventContext context;
 

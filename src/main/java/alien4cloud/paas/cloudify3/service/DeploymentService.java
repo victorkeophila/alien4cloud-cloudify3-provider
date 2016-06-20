@@ -8,28 +8,23 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.stereotype.Component;
-
-import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
-import alien4cloud.paas.cloudify3.model.Blueprint;
-import alien4cloud.paas.cloudify3.model.Deployment;
-import alien4cloud.paas.cloudify3.model.Execution;
-import alien4cloud.paas.cloudify3.model.NodeInstance;
-import alien4cloud.paas.cloudify3.model.Workflow;
-import alien4cloud.paas.cloudify3.restclient.BlueprintClient;
-import alien4cloud.paas.cloudify3.restclient.DeploymentClient;
-import alien4cloud.paas.cloudify3.service.model.CloudifyDeployment;
-import alien4cloud.paas.exception.PaaSNotYetDeployedException;
-import alien4cloud.paas.model.DeploymentStatus;
-import alien4cloud.paas.model.PaaSDeploymentContext;
 
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
+import alien4cloud.paas.cloudify3.model.*;
+import alien4cloud.paas.cloudify3.restclient.BlueprintClient;
+import alien4cloud.paas.cloudify3.restclient.DeploymentClient;
+import alien4cloud.paas.cloudify3.service.model.CloudifyDeployment;
+import alien4cloud.paas.exception.PaaSNotYetDeployedException;
+import alien4cloud.paas.model.DeploymentStatus;
+import alien4cloud.paas.model.PaaSDeploymentContext;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Handle deployment of the topology on cloudify 3. This service handle from the creation of blueprint from alien model to execution of default workflow
@@ -46,9 +41,6 @@ public class DeploymentService extends RuntimeService {
 
     @Resource
     private BlueprintClient blueprintClient;
-
-    @Resource
-    private EventService eventService;
 
     @Resource
     private StatusService statusService;
@@ -74,9 +66,8 @@ public class DeploymentService extends RuntimeService {
         try {
             blueprintPath = blueprintService.generateBlueprint(alienDeployment);
         } catch (IOException | CSARVersionNotFoundException e) {
-            log.error(
-                    "Unable to generate the blueprint for " + alienDeployment.getDeploymentPaaSId() + " with alien deployment id "
-                            + alienDeployment.getDeploymentId(), e);
+            log.error("Unable to generate the blueprint for " + alienDeployment.getDeploymentPaaSId() + " with alien deployment id "
+                    + alienDeployment.getDeploymentId(), e);
             statusService.registerDeploymentStatus(alienDeployment.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
             return Futures.immediateFailedFuture(e);
         }
@@ -110,7 +101,8 @@ public class DeploymentService extends RuntimeService {
         ListenableFuture<Deployment> installedExecution = waitForExecutionFinish(installingExecution);
 
         // Add a callback to handled failures and provide alien with the correct events.
-        addFailureCallback(installedExecution, "Deployment", alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId(), DeploymentStatus.FAILURE);
+        addFailureCallback(installedExecution, "Deployment", alienDeployment.getDeploymentPaaSId(), alienDeployment.getDeploymentId(),
+                DeploymentStatus.FAILURE);
         return installedExecution;
     }
 
