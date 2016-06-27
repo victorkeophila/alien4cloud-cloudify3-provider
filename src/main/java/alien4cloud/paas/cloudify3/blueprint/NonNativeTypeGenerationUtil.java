@@ -1,20 +1,5 @@
 package alien4cloud.paas.cloudify3.blueprint;
 
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
 import alien4cloud.exception.InvalidArgumentException;
 import alien4cloud.model.components.AbstractPropertyValue;
@@ -44,9 +29,21 @@ import alien4cloud.topology.TopologyUtils;
 import alien4cloud.tosca.ToscaUtils;
 import alien4cloud.tosca.normative.ToscaFunctionConstants;
 import alien4cloud.utils.FileUtil;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class NonNativeTypeGenerationUtil extends AbstractGenerationUtil {
@@ -292,8 +289,8 @@ public class NonNativeTypeGenerationUtil extends AbstractGenerationUtil {
             return "get_attribute(ctx." + functionPropertyValue.getTemplateName().toLowerCase() + context + ", '"
                     + functionPropertyValue.getElementNameToFetch() + "')";
         } else if (ToscaFunctionConstants.GET_PROPERTY.equals(functionPropertyValue.getFunction())) {
-            return "get_property(ctx." + functionPropertyValue.getTemplateName().toLowerCase() + context + ", '"
-                    + functionPropertyValue.getElementNameToFetch() + "')";
+            return "get_property(ctx." + functionPropertyValue.getTemplateName().toLowerCase() + context + ", '" + functionPropertyValue.getElementNameToFetch()
+                    + "')";
         } else if (ToscaFunctionConstants.GET_OPERATION_OUTPUT.equals(functionPropertyValue.getFunction())) {
             return "get_attribute(ctx." + functionPropertyValue.getTemplateName().toLowerCase() + context + ", '_a4c_OO:"
                     + functionPropertyValue.getInterfaceName() + ':' + functionPropertyValue.getOperationName() + ":"
@@ -365,11 +362,15 @@ public class NonNativeTypeGenerationUtil extends AbstractGenerationUtil {
     public String getArtifactPath(String nodeId, String artifactId, IArtifact artifact) {
         Map<String, DeploymentArtifact> topologyArtifacts = alienDeployment.getAllNodes().get(nodeId).getNodeTemplate().getArtifacts();
         IArtifact topologyArtifact = topologyArtifacts != null ? topologyArtifacts.get(artifactId) : null;
-        if (topologyArtifact != null && ArtifactRepositoryConstants.ALIEN_ARTIFACT_REPOSITORY.equals(topologyArtifact.getArtifactRepository())) {
-            // Overidden in the topology
+        if (topologyArtifact == null) {
+            // not overridded
+            return getArtifactRelativePath(artifact);
+        } else if (Objects.equals(topologyArtifact.getArtifactRepository(), ArtifactRepositoryConstants.ALIEN_ARTIFACT_REPOSITORY)) {
+            // Overidden in the topology via upload
             return mappingConfiguration.getTopologyArtifactDirectoryName() + "/" + nodeId + "/" + artifact.getArchiveName() + "/" + artifact.getArtifactRef();
         } else {
-            return getArtifactRelativePath(artifact);
+            // overridded in topology via yaml import
+            return getArtifactRelativePath(topologyArtifact);
         }
     }
 
@@ -396,11 +397,14 @@ public class NonNativeTypeGenerationUtil extends AbstractGenerationUtil {
         Map<String, DeploymentArtifact> topologyArtifacts = alienDeployment.getAllNodes().get(sourceId).getRelationshipTemplate(relationshipId, sourceId)
                 .getRelationshipTemplate().getArtifacts();
         IArtifact topologyArtifact = topologyArtifacts != null ? topologyArtifacts.get(artifactId) : null;
-        if (topologyArtifact != null && ArtifactRepositoryConstants.ALIEN_ARTIFACT_REPOSITORY.equals(topologyArtifact.getArtifactRepository())) {
+        if (topologyArtifact == null) {
+            return getArtifactRelativePath(artifact);
+        } else if (Objects.equals(topologyArtifact.getArtifactRepository(), ArtifactRepositoryConstants.ALIEN_ARTIFACT_REPOSITORY)) {
             // Overridden in the topology
             return mappingConfiguration.getTopologyArtifactDirectoryName() + "/" + sourceId + "/" + artifact.getArchiveName() + "/" + artifact.getArtifactRef();
         } else {
-            return getArtifactRelativePath(artifact);
+            // overridded in topology via yaml import
+            return getArtifactRelativePath(topologyArtifact);
         }
     }
 
