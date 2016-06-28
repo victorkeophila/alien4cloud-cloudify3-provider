@@ -18,6 +18,9 @@
 		org.elasticsearch.mapping">
         <!-- alien4cloud.security.* to exclude ldap package is not working in component-scan -->
         <context:exclude-filter type="regex" expression="alien4cloud\.paas\.cloudify3\.PluginContextConfiguration"/>
+        <context:exclude-filter type="regex" expression="alien4cloud\.rest\..*"/>
+        <context:exclude-filter type="regex" expression="alien4cloud\.servlet\..*"/>
+        <context:exclude-filter type="regex" expression="alien4cloud\.webconfiguration\..*"/>
         <context:exclude-filter type="regex"
                                 expression="alien4cloud\.ldap.*|alien4cloud\.initialization.*|alien4cloud\.documentation.*|alien4cloud\.audit.*|alien4cloud\.security\.users\.rest.*|alien4cloud\.security\.groups\.rest.*"/>
         <context:exclude-filter type="regex" expression="alien4cloud\.security\.spring\.SecurityConfiguration"/>
@@ -59,7 +62,8 @@
         </property>
     </bean>
 
-    <bean id="asyncRestTemplate" name="cloudify-async-rest-template" class="org.springframework.web.client.AsyncRestTemplate">
+    <bean id="asyncRestTemplate" name="cloudify-async-rest-template"
+          class="org.springframework.web.client.AsyncRestTemplate">
         <constructor-arg>
             <bean class="org.springframework.http.client.SimpleClientHttpRequestFactory">
                 <property name="taskExecutor">
