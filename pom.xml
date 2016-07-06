@@ -19,6 +19,10 @@
 		</repository>
 	</repositories>
 
+	<scm>
+		<connection>scm:git:https://github.com/alien4cloud/alien4cloud-cloudify3-provider.git</connection>
+	</scm>
+
 	<distributionManagement>
 		<repository>
 			<id>repo.opensource.fastconnect.org</id>
