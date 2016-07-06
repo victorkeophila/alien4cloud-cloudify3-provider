@@ -20,7 +20,6 @@ import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.cloudify3.configuration.CloudConfiguration;
 import alien4cloud.paas.cloudify3.configuration.CloudConfigurationHolder;
-import alien4cloud.paas.cloudify3.error.SingleLocationRequiredException;
 import alien4cloud.paas.cloudify3.event.AboutToDeployTopologyEvent;
 import alien4cloud.paas.cloudify3.location.ITypeAwareLocationConfigurator;
 import alien4cloud.paas.cloudify3.service.CloudifyDeploymentBuilderService;
@@ -130,17 +129,18 @@ public class CloudifyOrchestrator implements IOrchestratorPlugin<CloudConfigurat
         statusService.registerDeployment(deploymentContext.getDeploymentPaaSId());
 
         applicationContext.publishEvent(new AboutToDeployTopologyEvent(this, deploymentContext));
-        // TODO Better do it in Alien4Cloud or in plugin ?
-        propertyEvaluatorService.processGetPropertyFunction(deploymentContext);
-        deploymentContext = scalableComputeReplacementService.transformTopology(deploymentContext);
         try {
+            // TODO Better do it in Alien4Cloud or in plugin ?
+            propertyEvaluatorService.processGetPropertyFunction(deploymentContext);
+            deploymentContext = scalableComputeReplacementService.transformTopology(deploymentContext);
 
             // pre-process the topology to add availability zones.
             osAzPPolicyService.process(deploymentContext);
 
             CloudifyDeployment deployment = cloudifyDeploymentBuilderService.buildCloudifyDeployment(deploymentContext);
             FutureUtil.associateFutureToPaaSCallback(deploymentService.deploy(deployment), callback);
-        } catch (SingleLocationRequiredException e) {
+        } catch (Throwable e) {
+            statusService.registerDeploymentStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
             callback.onFailure(e);
         }
     }

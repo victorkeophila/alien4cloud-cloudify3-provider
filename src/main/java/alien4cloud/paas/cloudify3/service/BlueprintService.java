@@ -1,28 +1,5 @@
 package alien4cloud.paas.cloudify3.service;
 
-import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.elasticsearch.common.collect.Sets;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import alien4cloud.component.repository.ArtifactLocalRepository;
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
 import alien4cloud.component.repository.CsarFileRepository;
@@ -48,8 +25,27 @@ import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.utils.FileUtil;
-
+import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.elasticsearch.common.collect.Sets;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * Handle blueprint generation from alien model
@@ -247,10 +243,10 @@ public class BlueprintService {
                 generatedBlueprintDirectoryPath.resolve("plugins/custom_wf_plugin.zip"));
 
         // device
-        FileUtil.copy(pluginRecipeResourcesPath.resolve("device-mapping-scripts"),
-            generatedBlueprintDirectoryPath.resolve("device-mapping-scripts"), StandardCopyOption.REPLACE_EXISTING);
+        FileUtil.copy(pluginRecipeResourcesPath.resolve("device-mapping-scripts"), generatedBlueprintDirectoryPath.resolve("device-mapping-scripts"),
+                StandardCopyOption.REPLACE_EXISTING);
         VelocityUtil.generate(pluginRecipeResourcesPath.resolve("velocity/mapping.py.vm"),
-            generatedBlueprintDirectoryPath.resolve("device-mapping-scripts/mapping.py"), context);
+                generatedBlueprintDirectoryPath.resolve("device-mapping-scripts/mapping.py"), context);
 
         // monitor
         if (CollectionUtils.isNotEmpty(alienDeployment.getNodesToMonitor())) {
@@ -306,9 +302,8 @@ public class BlueprintService {
         } else {
             Path artifactCopiedDirectory = generatedBlueprintDirectoryPath.resolve("artifacts").resolve(artifact.getArchiveName());
             FileSystem csarFS = FileSystems.newFileSystem(csarPath, null);
-            String artifactRelativePathName = artifact.getArtifactRef();
-            artifactPath = csarFS.getPath(artifactRelativePathName);
-            artifactCopiedPath = artifactCopiedDirectory.resolve(artifactRelativePathName);
+            artifactPath = csarFS.getPath(artifact.getArtifactRef());
+            artifactCopiedPath = artifactCopiedDirectory.resolve(artifact.getArtifactRef());
         }
         if (Files.isRegularFile(artifactCopiedPath)) {
             // already copied do nothing
@@ -331,13 +326,24 @@ public class BlueprintService {
         for (Map.Entry<String, DeploymentArtifact> artifactEntry : artifacts.entrySet()) {
             DeploymentArtifact artifact = artifactEntry.getValue();
             if (artifact != null) {
-                Path csarPath = repository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
+                IArtifact artifactToCopy = artifact;
+                IArtifact originalArtifact = null;
+                Path csarPath = null;
                 Map<String, DeploymentArtifact> topologyArtifacts = node.getArtifacts();
-                if (topologyArtifacts != null && topologyArtifacts.containsKey(artifactEntry.getKey())) {
-                    copyArtifact(generatedBlueprintDirectoryPath, csarPath, pathToNode, topologyArtifacts.get(artifactEntry.getKey()), artifact);
+                DeploymentArtifact topologyArtifact = (DeploymentArtifact) MapUtil.get(topologyArtifacts, artifactEntry.getKey());
+
+                if (topologyArtifact != null) {
+                    // this means the artifact is overridded, either from the ui (1), or from the yaml imported topology template(2).
+                    artifactToCopy = topologyArtifact;
+                    originalArtifact = artifact;
+
+                    // in the latest case (2), the archive containing the artifact is not the one of the related indexedNodeType
+                    csarPath = repository.getCSAR(topologyArtifact.getArchiveName(), topologyArtifact.getArchiveVersion());
                 } else {
-                    copyArtifact(generatedBlueprintDirectoryPath, csarPath, pathToNode, artifact, null);
+                    // the artifact is not overridded, thus, still located in the indexedNodeType csar
+                    csarPath = repository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
                 }
+                copyArtifact(generatedBlueprintDirectoryPath, csarPath, pathToNode, artifactToCopy, originalArtifact);
             }
         }
     }

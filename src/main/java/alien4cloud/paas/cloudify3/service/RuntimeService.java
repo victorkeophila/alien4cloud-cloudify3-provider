@@ -6,7 +6,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 
-import lombok.extern.slf4j.Slf4j;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+
 import alien4cloud.paas.cloudify3.model.Deployment;
 import alien4cloud.paas.cloudify3.model.Execution;
 import alien4cloud.paas.cloudify3.model.ExecutionStatus;
@@ -14,13 +20,7 @@ import alien4cloud.paas.cloudify3.model.NodeInstance;
 import alien4cloud.paas.cloudify3.restclient.DeploymentClient;
 import alien4cloud.paas.cloudify3.restclient.ExecutionClient;
 import alien4cloud.paas.cloudify3.restclient.NodeInstanceClient;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Base class to manage deployment's runtime.
@@ -37,9 +37,6 @@ public abstract class RuntimeService {
     protected DeploymentClient deploymentClient;
 
     @Resource
-    private StatusService statusService;
-
-    @Resource
     protected ListeningScheduledExecutorService scheduledExecutorService;
 
     private ListenableFuture<Execution> internalWaitForExecutionFinish(final ListenableFuture<Execution> futureExecution) {
@@ -51,8 +48,8 @@ public abstract class RuntimeService {
                     return futureExecution;
                 } else {
                     // If it's not finished, schedule another poll in 2 seconds
-                    ListenableFuture<Execution> newFutureExecution = Futures.dereference(scheduledExecutorService.schedule(
-                            new Callable<ListenableFuture<Execution>>() {
+                    ListenableFuture<Execution> newFutureExecution = Futures
+                            .dereference(scheduledExecutorService.schedule(new Callable<ListenableFuture<Execution>>() {
                                 @Override
                                 public ListenableFuture<Execution> call() throws Exception {
                                     return executionClient.asyncRead(execution.getId());
@@ -136,8 +133,8 @@ public abstract class RuntimeService {
                     return futureExecutions;
                 } else {
                     // If it's not finished, schedule another poll in 2 seconds
-                    ListenableFuture<Execution[]> newFutureExecutions = Futures.dereference(scheduledExecutorService.schedule(
-                            new Callable<ListenableFuture<Execution[]>>() {
+                    ListenableFuture<Execution[]> newFutureExecutions = Futures
+                            .dereference(scheduledExecutorService.schedule(new Callable<ListenableFuture<Execution[]>>() {
                                 @Override
                                 public ListenableFuture<Execution[]> call() throws Exception {
                                     return executionClient.asyncList(deploymentId, true);

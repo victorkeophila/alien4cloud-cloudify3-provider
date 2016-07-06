@@ -14,7 +14,7 @@
     File /opt/cfy/cloudify-manager-blueprints-commercial/aws-ec2-manager-blueprint.yaml
       * find agents_security_group definition
       * replace everithing with:
-          agents_security_group
+          agents_security_group:
             type: cloudify.openstack.nodes.SecurityGroup
             properties:
               resource_id: { get_input: agents_security_group_name }
