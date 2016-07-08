@@ -9,30 +9,7 @@ import java.util.Set;
 import javax.annotation.Resource;
 import javax.xml.bind.DatatypeConverter;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.stereotype.Component;
-
-import alien4cloud.paas.cloudify3.model.CloudifyLifeCycle;
-import alien4cloud.paas.cloudify3.model.Event;
-import alien4cloud.paas.cloudify3.model.EventAlienPersistent;
-import alien4cloud.paas.cloudify3.model.EventAlienWorkflow;
-import alien4cloud.paas.cloudify3.model.EventAlienWorkflowStarted;
-import alien4cloud.paas.cloudify3.model.EventType;
-import alien4cloud.paas.cloudify3.model.NodeInstance;
-import alien4cloud.paas.cloudify3.model.NodeInstanceStatus;
-import alien4cloud.paas.cloudify3.model.Workflow;
-import alien4cloud.paas.cloudify3.restclient.DeploymentEventClient;
-import alien4cloud.paas.cloudify3.restclient.NodeInstanceClient;
-import alien4cloud.paas.model.AbstractMonitorEvent;
-import alien4cloud.paas.model.DeploymentStatus;
-import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
-import alien4cloud.paas.model.PaaSInstancePersistentResourceMonitorEvent;
-import alien4cloud.paas.model.PaaSInstanceStateMonitorEvent;
-import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
-import alien4cloud.paas.model.PaaSWorkflowMonitorEvent;
-import alien4cloud.paas.model.PaaSWorkflowStepMonitorEvent;
-import alien4cloud.utils.MapUtil;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -42,6 +19,13 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import alien4cloud.paas.cloudify3.model.*;
+import alien4cloud.paas.cloudify3.restclient.DeploymentEventClient;
+import alien4cloud.paas.cloudify3.restclient.NodeInstanceClient;
+import alien4cloud.paas.model.*;
+import alien4cloud.utils.MapUtil;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Handle cloudify 3 events request
@@ -146,6 +130,10 @@ public class EventService {
         } else {
             log.warn("Notify new status {} for the deployment {} which is not registered by event service", deploymentStatus, deploymentPaaSId);
         }
+    }
+
+    public synchronized String getDeploymentIdFromDeploymentPaaSId(String deploymentPaaSId) {
+        return paaSDeploymentIdToAlienDeploymentIdMapping.get(deploymentPaaSId);
     }
 
     /**
