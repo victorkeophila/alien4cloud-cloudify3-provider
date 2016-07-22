@@ -2,16 +2,12 @@ package alien4cloud.paas.cloudify3.service;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 
-import alien4cloud.dao.IGenericSearchDAO;
-import alien4cloud.paas.model.PaaSDeploymentLog;
-import alien4cloud.paas.model.PaaSDeploymentLogLevel;
 import org.springframework.stereotype.Component;
 
 import com.google.common.collect.Maps;
@@ -49,9 +45,6 @@ public class DeploymentService extends RuntimeService {
     @Resource
     private StatusService statusService;
 
-    @Resource(name = "alien-monitor-es-dao")
-    private IGenericSearchDAO alienMonitorDao;
-
     /**
      * Deploy a topology to cloudify.
      * <ul>
@@ -73,13 +66,6 @@ public class DeploymentService extends RuntimeService {
         try {
             blueprintPath = blueprintService.generateBlueprint(alienDeployment);
         } catch (IOException | CSARVersionNotFoundException e) {
-            PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
-            deploymentLog.setDeploymentId(alienDeployment.getDeploymentId());
-            deploymentLog.setDeploymentPaaSId(alienDeployment.getDeploymentPaaSId());
-            deploymentLog.setContent(e.getMessage());
-            deploymentLog.setLevel(PaaSDeploymentLogLevel.ERROR);
-            deploymentLog.setTimestamp(new Date());
-            alienMonitorDao.save(deploymentLog);
             log.error("Unable to generate the blueprint for " + alienDeployment.getDeploymentPaaSId() + " with alien deployment id "
                     + alienDeployment.getDeploymentId(), e);
 
@@ -259,14 +245,6 @@ public class DeploymentService extends RuntimeService {
 
             @Override
             public void onFailure(Throwable t) {
-                PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
-                deploymentLog.setDeploymentId(deploymentId);
-                deploymentLog.setDeploymentPaaSId(deploymentPaaSId);
-                deploymentLog.setContent(t.getMessage());
-                deploymentLog.setLevel(PaaSDeploymentLogLevel.ERROR);
-                deploymentLog.setTimestamp(new Date());
-                alienMonitorDao.save(deploymentLog);
-
                 log.error(operationName + " of deployment " + deploymentPaaSId + " with alien's deployment id " + deploymentId + " has failed", t);
                 statusService.registerDeploymentStatus(deploymentPaaSId, status);
             }

@@ -309,6 +309,10 @@ public class BlueprintService {
             // already copied do nothing
             return;
         }
+        if(artifactPath == null || artifactPath.toString().isEmpty()) {
+            // no artifact is defined / nothing to copy
+            return;
+        }
         Files.createDirectories(artifactCopiedPath.getParent());
         if (Files.isDirectory(artifactPath)) {
             FileUtil.copy(artifactPath, artifactCopiedPath, StandardCopyOption.REPLACE_EXISTING);

@@ -189,7 +189,8 @@ public class CloudifyOrchestrator implements IOrchestratorPlugin<CloudConfigurat
     }
 
     @Override
-    public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
+    public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext,
+            IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
         statusService.getInstancesInformation(deploymentContext, callback);
     }
 
@@ -221,7 +222,8 @@ public class CloudifyOrchestrator implements IOrchestratorPlugin<CloudConfigurat
     }
 
     @Override
-    public void launchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, Map<String, Object> workflowParameters, IPaaSCallback<?> callback) {
+    public void launchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, Map<String, Object> workflowParameters,
+            IPaaSCallback<?> callback) {
         FutureUtil.associateFutureToPaaSCallback(
                 customWorkflowService.launchWorkflow(deploymentContext.getDeploymentPaaSId(), workflowName, workflowParameters), callback);
     }
