@@ -31,9 +31,9 @@ import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 @Slf4j
 @Component
 public class OpenStackAvailabilityZonePlacementPolicyService {
-    private static final String SERVER_PROPERTY = "server";
-    private static final String VOLUME_PROPERTY = "volume";
-    private static final String AZ_KEY = "availability_zone";
+    public static final String SERVER_PROPERTY = "server";
+    public static final String VOLUME_PROPERTY = "volume";
+    public static final String AZ_KEY = "availability_zone";
 
     @Inject
     @Lazy(true)
@@ -87,7 +87,7 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
     }
 
     public void setAZForAllNodes(String deploymentId, Map<String, PaaSNodeTemplate> allNodes, List<LocationResourceTemplate> availabilityZones, String groupName, Set<String> members) {
-        Set<String> membersSorted = sortMembersByVolume(allNodes, members);
+        LinkedHashSet<String> membersSorted = sortMembersByVolumeAndAZ(allNodes, members);
         Map<String, Integer> countUsageOfAZOnServer = initMapOfUsedAZ(availabilityZones);
 
         for (String member : membersSorted) {
@@ -154,9 +154,9 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
     }
 
     // Sort the members by volume with AZ to re-use this AZ in priority
-    private Set<String> sortMembersByVolume(Map<String, PaaSNodeTemplate> allNodes, Set<String> members) {
-        Set<String> membersWithVolumesAndAZ = new HashSet<>();
-        Set<String> membersWithoutVolumes = new HashSet<>();
+    private LinkedHashSet<String> sortMembersByVolumeAndAZ(Map<String, PaaSNodeTemplate> allNodes, Set<String> members) {
+        LinkedHashSet<String> membersWithVolumesAndAZ = new LinkedHashSet<>();
+        LinkedHashSet<String> membersWithoutVolumes = new LinkedHashSet<>();
         for (String member : members) {
             boolean hasAZ = false;
             PaaSNodeTemplate target = allNodes.get(member);
@@ -168,7 +168,6 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
                     }
                 }
             }
-
             if (hasAZ) {
                 membersWithVolumesAndAZ.add(member);
             } else {
@@ -188,7 +187,7 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
     }
 
     private String getLessUsedAZ(Map<String, Integer> countUsageOfAZ) {
-        String lessUsedAZ = countUsageOfAZ.keySet().toArray(new String[1])[0];
+        String lessUsedAZ = countUsageOfAZ.keySet().iterator().next();
         for (Map.Entry<String, Integer> entry : countUsageOfAZ.entrySet()) {
             if (entry.getValue() < countUsageOfAZ.get(lessUsedAZ)) {
                 lessUsedAZ = entry.getKey();
