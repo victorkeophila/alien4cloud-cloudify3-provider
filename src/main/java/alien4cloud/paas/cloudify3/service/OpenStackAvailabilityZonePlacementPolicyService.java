@@ -1,10 +1,6 @@
 package alien4cloud.paas.cloudify3.service;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.inject.Inject;
 
@@ -42,8 +38,10 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
     @Inject
     @Lazy(true)
     private ILocationResourceService locationResourceService;
+
     @Inject
     private EventService eventService;
+
 
     /**
      * Pre-process the topology to add availability zones based on the defined H.A. policies.
@@ -85,11 +83,17 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
             return;
         }
 
-        int nextAZ = 0;
-        // get the location configuration nodes
-        for (String member : members) {
+        setAZForAllNodes(deploymentContext.getDeploymentId(), deploymentContext.getPaaSTopology().getAllNodes(), availabilityZones, groupName, members);
+    }
+
+    public void setAZForAllNodes(String deploymentId, Map<String, PaaSNodeTemplate> allNodes, List<LocationResourceTemplate> availabilityZones, String groupName, Set<String> members) {
+        Set<String> membersSorted = sortMembersByVolume(allNodes, members);
+        Map<String, Integer> countUsageOfAZOnServer = initMapOfUsedAZ(availabilityZones);
+
+        for (String member : membersSorted) {
             String availabilityZone = null;
-            PaaSNodeTemplate target = deploymentContext.getPaaSTopology().getAllNodes().get(member);
+            PaaSNodeTemplate target = allNodes.get(member);
+
             if (target.getStorageNodes() != null) {
                 // there is storage nodes, try to put them in same AZ
                 for (PaaSNodeTemplate volumeNode : target.getStorageNodes()) {
@@ -97,7 +101,6 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
                     if (availabilityZone == null) {
                         availabilityZone = storageAZ;
                     } else if (!availabilityZone.equals(storageAZ)) {
-                        // Fail as we cannot have volumes in different availability zones for the same compute.
                         log.error("Volumes attached to node {} are defined in different availability zones. HA policy will not be applied for group {}.",
                                 target.getId(), groupName);
                         throw new AZAssignmentException("Volumes attached to node cannot lie in different availability zones.");
@@ -106,29 +109,22 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
             }
 
             if (availabilityZone == null) {
-                // storage doesn't provide a zone, check if the main node provides one.
-                availabilityZone = getAZ(target, SERVER_PROPERTY);
-            }
-
-            if (availabilityZone == null) {
-                // pick next zone using round robin
-                ScalarPropertyValue value = (ScalarPropertyValue) availabilityZones.get(nextAZ).getTemplate().getProperties().get("id");
-                availabilityZone = value.getValue();
-                nextAZ = nextAZ == availabilityZones.size() - 1 ? 0 : nextAZ + 1;
+                availabilityZone = getLessUsedAZ(countUsageOfAZOnServer);
             }
 
             // set the availability zone to all nodes
-            setAZ(deploymentContext.getDeploymentId(), target, availabilityZone, SERVER_PROPERTY);
+            setAZ(deploymentId, target, availabilityZone, SERVER_PROPERTY);
+            countUsageOfAZOnServer.put(availabilityZone, countUsageOfAZOnServer.get(availabilityZone) + 1);
             if (target.getStorageNodes() != null) {
                 for (PaaSNodeTemplate volumeNode : target.getStorageNodes()) {
-                    setAZ(deploymentContext.getDeploymentId(), volumeNode, availabilityZone, VOLUME_PROPERTY);
+                    setAZ(deploymentId, volumeNode, availabilityZone, VOLUME_PROPERTY);
                 }
             }
         }
     }
 
     private String getAZ(PaaSNodeTemplate paaSNodeTemplate, String handlerPropertyKey) {
-        AbstractPropertyValue volumePropertyValue = paaSNodeTemplate.getNodeTemplate().getProperties().get(handlerPropertyKey);
+        AbstractPropertyValue volumePropertyValue = paaSNodeTemplate.getTemplate().getProperties().get(handlerPropertyKey);
         if (volumePropertyValue != null && volumePropertyValue instanceof PropertyValue) {
             Object volume = ((PropertyValue) volumePropertyValue).getValue();
             if (volume instanceof Map) {
@@ -140,11 +136,11 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
 
     private void setAZ(String deploymentId, PaaSNodeTemplate paaSNodeTemplate, String availabilityZone, String handlerPropertyKey) {
         // Enqueue events so the fields will be updated in the deployment topology
-        AbstractPropertyValue volumePropertyValue = paaSNodeTemplate.getNodeTemplate().getProperties().get(handlerPropertyKey);
+        AbstractPropertyValue volumePropertyValue = paaSNodeTemplate.getTemplate().getProperties().get(handlerPropertyKey);
         if (volumePropertyValue == null) {
             volumePropertyValue = new ComplexPropertyValue();
             ((PropertyValue<Map<String, Object>>) volumePropertyValue).setValue(new HashMap<String, Object>());
-            paaSNodeTemplate.getNodeTemplate().getProperties().put(handlerPropertyKey, volumePropertyValue);
+            paaSNodeTemplate.getTemplate().getProperties().put(handlerPropertyKey, volumePropertyValue);
         }
 
         Map<String, Object> volumeMap = ((ComplexPropertyValue) volumePropertyValue).getValue();
@@ -155,5 +151,49 @@ public class OpenStackAvailabilityZonePlacementPolicyService {
         event.setDate(new Date().getTime());
         event.setDeploymentId(deploymentId);
         eventService.registerEvent(event);
+    }
+
+    // Sort the members by volume with AZ to re-use this AZ in priority
+    private Set<String> sortMembersByVolume(Map<String, PaaSNodeTemplate> allNodes, Set<String> members) {
+        Set<String> membersWithVolumesAndAZ = new HashSet<>();
+        Set<String> membersWithoutVolumes = new HashSet<>();
+        for (String member : members) {
+            boolean hasAZ = false;
+            PaaSNodeTemplate target = allNodes.get(member);
+            if (target.getStorageNodes() != null) {
+                for (PaaSNodeTemplate volumeNode : target.getStorageNodes()) {
+                    if (getAZ(volumeNode, VOLUME_PROPERTY) != null) {
+                        hasAZ = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasAZ) {
+                membersWithVolumesAndAZ.add(member);
+            } else {
+                membersWithoutVolumes.add(member);
+            }
+        }
+        membersWithVolumesAndAZ.addAll(membersWithoutVolumes);
+        return membersWithVolumesAndAZ;
+    }
+
+    private Map<String, Integer> initMapOfUsedAZ(List<LocationResourceTemplate> availabilityZones) {
+        Map<String, Integer> countUsageOfAZ = new HashMap<>();
+        for (LocationResourceTemplate availabilityZone : availabilityZones ) {
+            countUsageOfAZ.put(((ScalarPropertyValue) availabilityZone.getTemplate().getProperties().get("id")).getValue(), 0);
+        }
+        return countUsageOfAZ;
+    }
+
+    private String getLessUsedAZ(Map<String, Integer> countUsageOfAZ) {
+        String lessUsedAZ = countUsageOfAZ.keySet().toArray(new String[1])[0];
+        for (Map.Entry<String, Integer> entry : countUsageOfAZ.entrySet()) {
+            if (entry.getValue() < countUsageOfAZ.get(lessUsedAZ)) {
+                lessUsedAZ = entry.getKey();
+            }
+        }
+        return lessUsedAZ;
     }
 }
