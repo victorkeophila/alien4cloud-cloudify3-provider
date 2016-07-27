@@ -5,7 +5,7 @@ template_author: Alien4cloud
 template_version: ${project.version}
 
 imports:
-  - tosca-normative-types:1.0.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-ALIEN12
 
 data_types:
   alien.datatypes.AgentConfig:

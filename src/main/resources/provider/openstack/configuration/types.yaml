@@ -5,7 +5,7 @@ template_author: Alien4cloud
 template_version: ${project.version}
 
 imports:
-  - tosca-normative-types:1.0.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-ALIEN12
   - cloudify3-common-types:${project.version}
 
 data_types:
