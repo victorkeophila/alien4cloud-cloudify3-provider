@@ -45,7 +45,7 @@ public class ApplicationUtil {
             applicationService.delete(application.getId());
         }
         Topology topology = parseYamlTopology(topologyFileName, locationName);
-        String applicationId = applicationService.create("alien", applicationName, null, null);
+        String applicationId = applicationService.create("alien", applicationName, null);
         topology.setDelegateId(applicationId);
         topology.setDelegateType(Application.class.getSimpleName().toLowerCase());
         alienDAO.save(topology);

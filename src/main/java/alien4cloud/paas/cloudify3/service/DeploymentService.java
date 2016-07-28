@@ -68,6 +68,7 @@ public class DeploymentService extends RuntimeService {
         } catch (IOException | CSARVersionNotFoundException e) {
             log.error("Unable to generate the blueprint for " + alienDeployment.getDeploymentPaaSId() + " with alien deployment id "
                     + alienDeployment.getDeploymentId(), e);
+
             statusService.registerDeploymentStatus(alienDeployment.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
             return Futures.immediateFailedFuture(e);
         }
