@@ -17,10 +17,13 @@ import alien4cloud.paas.IPaaSTemplate;
 import alien4cloud.paas.cloudify3.blueprint.BlueprintGenerationUtil;
 import alien4cloud.paas.cloudify3.configuration.CloudConfigurationHolder;
 import alien4cloud.paas.cloudify3.configuration.MappingConfigurationHolder;
+import alien4cloud.paas.cloudify3.error.BlueprintGenerationException;
 import alien4cloud.paas.cloudify3.service.model.CloudifyDeployment;
 import alien4cloud.paas.cloudify3.service.model.OperationWrapper;
 import alien4cloud.paas.cloudify3.service.model.Relationship;
 import alien4cloud.paas.cloudify3.util.VelocityUtil;
+import alien4cloud.paas.model.PaaSDeploymentLog;
+import alien4cloud.paas.model.PaaSDeploymentLogLevel;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.plugin.model.ManagedPlugin;
@@ -34,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,6 +46,7 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.elasticsearch.common.collect.Sets;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
@@ -299,11 +304,13 @@ public class BlueprintService {
                     .resolve(originalArtifact.getArchiveName());
             artifactPath = artifactRepository.resolveFile(artifact.getArtifactRef());
             artifactCopiedPath = artifactCopiedDirectory.resolve(originalArtifact.getArtifactRef());
+            ensureArtifactDefined(originalArtifact, pathToNode);
         } else {
             Path artifactCopiedDirectory = generatedBlueprintDirectoryPath.resolve("artifacts").resolve(artifact.getArchiveName());
             FileSystem csarFS = FileSystems.newFileSystem(csarPath, null);
             artifactPath = csarFS.getPath(artifact.getArtifactRef());
             artifactCopiedPath = artifactCopiedDirectory.resolve(artifact.getArtifactRef());
+            ensureArtifactDefined(artifact, pathToNode);
         }
         if (Files.isRegularFile(artifactCopiedPath)) {
             // already copied do nothing
@@ -314,6 +321,14 @@ public class BlueprintService {
             FileUtil.copy(artifactPath, artifactCopiedPath, StandardCopyOption.REPLACE_EXISTING);
         } else {
             Files.copy(artifactPath, artifactCopiedPath);
+        }
+    }
+
+    private void ensureArtifactDefined(IArtifact artifact, String nodeId) {
+        if (artifact.getArtifactRef() == null || artifact.getArtifactRef().isEmpty()) {
+            throw new BlueprintGenerationException(
+                    "Cloudify plugin only manage deployment artifact with an artifact ref not null or empty. Failed to copy artifact of type <"
+                            + artifact.getArtifactType() + "> for node <" + nodeId + ">.");
         }
     }
 
