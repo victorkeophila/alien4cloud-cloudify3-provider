@@ -30,7 +30,7 @@ import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import org.elasticsearch.common.collect.Maps;
+import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
