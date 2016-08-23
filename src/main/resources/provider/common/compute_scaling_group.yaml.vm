@@ -1,0 +1,69 @@
+##macro(addAssociatedScalingResources $all_nodes $compute_members)
+##set($full_group_members=[])
+##foreach($member in $compute_members)
+### ###### add compute id ###
+##set($dummy=$full_group_members.add($member.id))
+### ###### search for volumes ###
+##foreach($storageNode in $member.storageNodes)
+##set($dummy=$full_group_members.add($storageNode.id))
+##end## foreach storageNodes
+### ###### search for floating ips ###
+##foreach($network in $member.networkNodes)
+##if($util.common.isFromType("alien.nodes.PublicNetwork", $network.getIndexedToscaElement()))
+##set($floating_ip_node_name=$util.network.generateFloatingIpNodeName($member.id, $network.id))
+##set($dummy=$full_group_members.add($floating_ip_node_name))
+##end## if public network
+##end## foreach networks
+##end## foreach computes
+##end## macro
+
+#macro(getAllChildren $node $children)
+#foreach($child in $node.children)
+#set($dummy=$children.add($child.id))
+#if($child.children && !$child.children.isEmpty())
+#getAllChildren($child, $children)
+#end## if children
+#end## foreach children
+#end## macro
+
+#macro(addGrouplessScalableCompute $computes)
+#set($_a4c_scalable_computes={})
+#foreach($compute in $computes)
+##if($compute.scalingPolicy.maxInstances > 1 && $compute.groups.isEmpty())
+#if($compute.scalingPolicy.maxInstances > 1)
+## ###### add scalable compute ###
+#set($members=[$compute.id])
+## ###### add attached volumes ###
+#foreach($storageNode in $compute.storageNodes)
+#set($dummy=$members.add($storageNode.id))
+#end## foreach storageNodes
+## ###### add existing floating ip ###
+#foreach($network in $compute.networkNodes)
+#if($util.common.isFromType("alien.nodes.PublicNetwork", $network.getIndexedToscaElement()))
+#set($floating_ip_node_name=$util.network.generateFloatingIpNodeName($compute.id, $network.id))
+#set($dummy=$members.add($floating_ip_node_name))
+#end## if public network
+#end## foreach networks
+## ###### add computes children ###
+#getAllChildren($compute, $members)
+## ###### add members list into the group ###
+#set($dummy=$_a4c_scalable_computes.put("_a4c_${compute.id}", $members))
+#end## if scalable
+#end## foreach computes
+#end## macro
+
+#macro(printDefaultInstancesFromGroup $computeList $groupMembers)
+#set($targetCompute='null')
+#foreach($compute in $computeList)
+#foreach($member in $groupMembers)
+#if($compute.id == $member)
+#set($targetCompute=$compute)
+#end## if
+#end## foreach group members
+#end## foreach computes
+#if($targetCompute)
+$targetCompute.scalingPolicy.initialInstances
+#else
+1
+#end## if
+#end## macro

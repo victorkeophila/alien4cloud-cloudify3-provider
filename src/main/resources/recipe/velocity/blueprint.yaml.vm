@@ -7,6 +7,7 @@ This template is used to generate cloudify 3 recipe from alien model
 - $util --> contains utility methods
 *#
 #parse("provider/common/non_native_nodes.yaml.vm")
+#parse("provider/common/compute_scaling_group.yaml.vm")
 tosca_definitions_version: $cloud.getConfigurationLocation($deployment.locationType).getDsl()
 
 imports:
@@ -43,6 +44,32 @@ node_templates:
 #nonNativeNodes($deployment.nonNatives)
 
 #parse("provider/common/monitor_node.yaml.vm")
+
+groups:
+#foreach($group in $deployment.groups.entrySet())
+  $group.key:
+#addAssociatedScalingResources($deployment.allNodes,$group.value)
+    members: $full_group_members
+#end## foreach groups
+#addGrouplessScalableCompute($deployment.computes)
+#foreach($group in $_a4c_scalable_computes.entrySet())
+  $group.key:
+    members: $group.value
+#end## foreach groups
+
+policies:
+#foreach($group in $deployment.groups.keySet())
+  ${group}_policy:
+    type: cloudify.policies.scaling
+    targets: [$group]
+#end## foreach groups
+#foreach($group in $_a4c_scalable_computes.entrySet())
+  ${group.key}_policy:
+    type: cloudify.policies.scaling
+    targets: [$group.key]
+    properties:
+      default_instances: #printDefaultInstancesFromGroup($deployment.computes $group.value)
+#end##foreach groups
 
 plugins:
   custom_wf_plugin:

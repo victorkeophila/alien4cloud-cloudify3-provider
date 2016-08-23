@@ -2,6 +2,8 @@ package alien4cloud.paas.cloudify3.blueprint;
 
 import java.nio.file.Path;
 
+import alien4cloud.model.components.IndexedInheritableToscaElement;
+import alien4cloud.tosca.ToscaUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import alien4cloud.model.components.AbstractPropertyValue;
@@ -54,5 +56,9 @@ public class CommonGenerationUtil extends AbstractGenerationUtil {
                 return toBeAbbreviated;
             }
         }
+    }
+
+    public boolean isFromType(String type, IndexedInheritableToscaElement indexedInheritableToscaElement){
+       return ToscaUtils.isFromType(type, indexedInheritableToscaElement);
     }
 }

@@ -75,6 +75,7 @@ public class CloudifyDeploymentBuilderService {
         cloudifyDeployment.setVolumes(deploymentContext.getPaaSTopology().getVolumes());
         cloudifyDeployment.setNonNatives(deploymentContext.getPaaSTopology().getNonNatives());
         cloudifyDeployment.setNativeTypes(nativeTypes);
+        cloudifyDeployment.setGroups(deploymentContext.getPaaSTopology().getGroups());
 
         cloudifyDeployment.setAllNodes(deploymentContext.getPaaSTopology().getAllNodes());
         cloudifyDeployment.setProviderDeploymentProperties(deploymentContext.getDeploymentTopology().getProviderDeploymentProperties());
