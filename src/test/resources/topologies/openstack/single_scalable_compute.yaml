@@ -64,10 +64,3 @@ topology_template:
       properties:
         floatingip:
           floating_network_name: net-pub
-
-  groups:
-    scaling_group:
-      members: [ Compute, AnotherScaleCompute ]
-      policies:
-        - name: Scalable Policy
-          type: tosca.policies.Scaling

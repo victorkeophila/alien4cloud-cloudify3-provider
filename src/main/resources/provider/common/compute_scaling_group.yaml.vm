@@ -45,7 +45,7 @@
 #end## if public network
 #end## foreach networks
 ## ###### add computes children ###
-#getAllChildren($compute, $members)
+##getAllChildren($compute, $members)
 ## ###### add members list into the group ###
 #set($dummy=$_a4c_scalable_computes.put("_a4c_${compute.id}", $members))
 #end## if scalable
