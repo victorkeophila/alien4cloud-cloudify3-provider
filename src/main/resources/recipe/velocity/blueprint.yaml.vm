@@ -45,31 +45,23 @@ node_templates:
 
 #parse("provider/common/monitor_node.yaml.vm")
 
+#buildScalableComputeGroups($deployment.computes)
+#if(!$_a4c_scalable_computes.isEmpty())
 groups:
-#foreach($group in $deployment.groups.entrySet())
-  $group.key:
-#addAssociatedScalingResources($deployment.allNodes,$group.value)
-    members: $full_group_members
-#end## foreach groups
-#addGrouplessScalableCompute($deployment.computes)
 #foreach($group in $_a4c_scalable_computes.entrySet())
   $group.key:
     members: $group.value
 #end## foreach groups
 
 policies:
-#foreach($group in $deployment.groups.keySet())
-  ${group}_policy:
-    type: cloudify.policies.scaling
-    targets: [$group]
-#end## foreach groups
 #foreach($group in $_a4c_scalable_computes.entrySet())
   ${group.key}_policy:
     type: cloudify.policies.scaling
     targets: [$group.key]
     properties:
       default_instances: #printDefaultInstancesFromGroup($deployment.computes $group.value)
-#end##foreach groups
+#end## foreach groups
+#end## if(!$_a4c_scalable_computes.isEmpty())
 
 plugins:
   custom_wf_plugin:

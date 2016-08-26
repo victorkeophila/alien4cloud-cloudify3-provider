@@ -8,7 +8,6 @@
 #if($computeHardSetPassword)
       use_password: false
 #end
-
 #set( $publicNetworks = ${util.network.getExternalNetworks($compute)} )
 #set( $privateNetworks = ${util.network.getInternalNetworks($compute)} )
 #if($util.collectionHasElement(${publicNetworks}) || $util.collectionHasElement(${privateNetworks}) || (!$computeHardSetPassword && $computeIsWindows))

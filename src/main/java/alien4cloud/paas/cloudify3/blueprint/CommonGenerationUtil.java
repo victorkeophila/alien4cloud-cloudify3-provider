@@ -33,10 +33,6 @@ public class CommonGenerationUtil extends AbstractGenerationUtil {
                 DeploymentPropertiesNames.MONITORING_INTERVAL_INMINUTE);
     }
 
-    public String getCfyScriptVersion() {
-        return CloudifyOrchestratorFactory.CFY_SCRIPT_VERSION;
-    }
-
     public String getScalarPropertyValue(NodeTemplate nodeTemplate, String propertyName) {
         AbstractPropertyValue value = (AbstractPropertyValue) MapUtil.get(nodeTemplate.getProperties(), propertyName);
         if (value != null) {

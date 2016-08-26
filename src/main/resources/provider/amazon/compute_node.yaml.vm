@@ -5,9 +5,6 @@
     type: ${compute.nodeTemplate.type}
     properties: ${util.natives.formatProperties(3, $compute.nodeTemplate.properties, $deployment.propertyMappings.get($compute.nodeTemplate.type))}
       name: ${compute.id}
-#if(${compute.scalingPolicy})
-    instances:
-#end
 #set($publicNetworks = ${util.network.getExternalNetworks($compute)} )
 #if($util.collectionHasElement(${publicNetworks}) || $computeIsWindows)
     relationships:

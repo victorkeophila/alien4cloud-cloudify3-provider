@@ -1,32 +1,9 @@
-##macro(addAssociatedScalingResources $all_nodes $compute_members)
-##set($full_group_members=[])
-##foreach($member in $compute_members)
-### ###### add compute id ###
-##set($dummy=$full_group_members.add($member.id))
-### ###### search for volumes ###
-##foreach($storageNode in $member.storageNodes)
-##set($dummy=$full_group_members.add($storageNode.id))
-##end## foreach storageNodes
-### ###### search for floating ips ###
-##foreach($network in $member.networkNodes)
-##if($util.common.isFromType("alien.nodes.PublicNetwork", $network.getIndexedToscaElement()))
-##set($floating_ip_node_name=$util.network.generateFloatingIpNodeName($member.id, $network.id))
-##set($dummy=$full_group_members.add($floating_ip_node_name))
-##end## if public network
-##end## foreach networks
-##end## foreach computes
-##end## macro
-
-#macro(getAllChildren $node $children)
-#foreach($child in $node.children)
-#set($dummy=$children.add($child.id))
-#if($child.children && !$child.children.isEmpty())
-#getAllChildren($child, $children)
-#end## if children
-#end## foreach children
-#end## macro
-
-#macro(addGrouplessScalableCompute $computes)
+#*
+  For each compute in the compute list.
+  Add scalable compute into a map: _a4c_scalable_computes 
+  Also add volumes and public ips attached to the compute
+*#
+#macro(buildScalableComputeGroups $computes)
 #set($_a4c_scalable_computes={})
 #foreach($compute in $computes)
 ##if($compute.scalingPolicy.maxInstances > 1 && $compute.groups.isEmpty())
@@ -44,14 +21,15 @@
 #set($dummy=$members.add($floating_ip_node_name))
 #end## if public network
 #end## foreach networks
-## ###### add computes children ###
-##getAllChildren($compute, $members)
 ## ###### add members list into the group ###
 #set($dummy=$_a4c_scalable_computes.put("_a4c_${compute.id}", $members))
 #end## if scalable
 #end## foreach computes
 #end## macro
 
+#*
+  Retrieve the default number of instances of the compute
+*#
 #macro(printDefaultInstancesFromGroup $computeList $groupMembers)
 #set($targetCompute='null')
 #foreach($compute in $computeList)
