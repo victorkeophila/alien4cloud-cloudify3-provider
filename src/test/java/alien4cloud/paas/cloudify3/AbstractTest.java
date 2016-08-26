@@ -28,8 +28,6 @@ import org.springframework.core.io.ClassPathResource;
 
 public abstract class AbstractTest {
 
-    public static final String SCALABLE_COMPUTE_TOPOLOGY = "scalable_compute";
-
     public static final String NEW_SCALABLE_COMPUTE_TOPOLOGY = "new_scalable_compute";
 
     public static final String SINGLE_SCALABLE_COMPUTE_TOPOLOGY = "single_scalable_compute";
