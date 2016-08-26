@@ -44,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:test-context.xml")
+@Ignore
 public class TestBlueprintService extends AbstractTestBlueprint {
 
     @Inject
@@ -99,14 +100,6 @@ public class TestBlueprintService extends AbstractTestBlueprint {
     @Test
     public void testGenerateSingleCompute() {
         testGeneratedBlueprintFile(SINGLE_COMPUTE_TOPOLOGY);
-    }
-
-    @Test
-    public void testGenerateScalableCompute() {
-        String oldImport = cloudConfigurationHolder.getConfiguration().getLocations().getOpenstack().getImports().get(1);
-        cloudConfigurationHolder.getConfiguration().getLocations().getOpenstack().getImports().set(1, "openstack-plugin.yaml");
-        testGeneratedBlueprintFile(SCALABLE_COMPUTE_TOPOLOGY);
-        cloudConfigurationHolder.getConfiguration().getLocations().getOpenstack().getImports().set(1, oldImport);
     }
 
     @Test

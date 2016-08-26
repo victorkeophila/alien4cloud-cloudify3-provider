@@ -26,7 +26,6 @@
 #end## if scalable
 #end## foreach computes
 #end## macro
-
 #*
   Retrieve the default number of instances of the compute
 *#

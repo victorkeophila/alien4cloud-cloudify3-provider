@@ -1,6 +1,8 @@
 package alien4cloud.paas.cloudify3.blueprint;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import alien4cloud.model.components.IndexedInheritableToscaElement;
 import alien4cloud.tosca.ToscaUtils;
@@ -56,5 +58,12 @@ public class CommonGenerationUtil extends AbstractGenerationUtil {
 
     public boolean isFromType(String type, IndexedInheritableToscaElement indexedInheritableToscaElement){
        return ToscaUtils.isFromType(type, indexedInheritableToscaElement);
+    }
+
+    public boolean doesVelocityFileExists(String velocityFilePath) {
+        if(Files.exists(Paths.get(velocityFilePath))) {
+            return true;
+        }
+        return false;
     }
 }

@@ -158,6 +158,7 @@ public class BlueprintService {
         context.put("util", util);
         context.put("deployment", alienDeployment);
         context.put("newline", "\n");
+        context.put("velocityResourcesPath", this.pluginRecipeResourcesPath.resolve("velocity"));
 
         // Copy artifacts
         for (PaaSNodeTemplate nonNative : alienDeployment.getNonNatives()) {

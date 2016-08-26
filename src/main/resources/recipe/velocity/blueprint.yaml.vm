@@ -45,7 +45,13 @@ node_templates:
 
 #parse("provider/common/monitor_node.yaml.vm")
 
+#* Handle scaling groups *#
+#if($util.common.doesVelocityFileExists("${velocityResourcesPath}/provider/${deployment.locationType}/compute_scaling_group.yaml.vm"))
+#parse("provider/${deployment.locationType}/compute_scaling_group.yaml.vm")
+#buildSpecificScalableComputeGroups($deployment.computes)
+#else
 #buildScalableComputeGroups($deployment.computes)
+#end## if exist
 #if(!$_a4c_scalable_computes.isEmpty())
 groups:
 #foreach($group in $_a4c_scalable_computes.entrySet())
@@ -62,6 +68,7 @@ policies:
       default_instances: #printDefaultInstancesFromGroup($deployment.computes $group.value)
 #end## foreach groups
 #end## if(!$_a4c_scalable_computes.isEmpty())
+#* End of scaling groups *#
 
 plugins:
   custom_wf_plugin:
