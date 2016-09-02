@@ -20,6 +20,7 @@ import java.util.Properties;
 import java.util.Set;
 import javax.inject.Inject;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.springframework.beans.factory.annotation.Value;
@@ -90,6 +91,7 @@ public abstract class AbstractTest {
     public static void cleanup() throws IOException {
         if (forceReloadCSARs) {
             FileUtil.delete(CSARUtil.ARTIFACTS_DIRECTORY);
+            FileUtils.deleteDirectory(CSARUtil.ARTIFACTS_DIRECTORY.toFile());
         }
         FileUtil.delete(tempPluginDataPath);
         // this is a hack for the yml resources changes to be taken into account without having to build the project
